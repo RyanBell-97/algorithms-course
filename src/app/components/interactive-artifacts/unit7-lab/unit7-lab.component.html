@@ -1,0 +1,264 @@
+<section class="am-card" *ngIf="artifactId">
+
+  <!-- ═══════════════════════════ L1 — AMORTIZED BANK ═════════════════════ -->
+  <ng-container *ngIf="artifactId === 'amortized-bank'">
+    <header class="am-head">
+      <span class="am-kicker">Amortized Analysis</span>
+      <h3>The Amortized Bank</h3>
+      <p>Amortized cost is a worst-case <em>sequence</em> average. Charge every operation the same amount and the surplus becomes credit — the proof is that the balance never goes negative.</p>
+    </header>
+
+    <div class="am-methods">
+      <div class="am-method" *ngFor="let m of methodCards" [attr.data-tone]="m.tone">
+        <strong>{{ m.name }} method</strong>
+        <span>{{ m.idea }}</span>
+      </div>
+    </div>
+
+    <div class="am-split">
+      <div class="am-main">
+        <div class="am-controls">
+          <label class="am-slider">
+            <span>Amortized charge per operation = <strong>{{ bankCharge }}</strong></span>
+            <input type="range" min="1" max="6" step="1" [(ngModel)]="bankCharge" />
+          </label>
+        </div>
+
+        <span class="am-label">Bank balance after each operation (charge − actual cost)</span>
+        <div class="am-chart">
+          <div class="am-col" *ngFor="let b of bankBalances; let i = index">
+            <span class="am-col-cost">c={{ b.cost }}</span>
+            <div class="am-col-track">
+              <div class="am-col-bar" [class.neg]="b.negative"
+                   [style.height.%]="bankBarHeight(b.balance)"></div>
+            </div>
+            <span class="am-col-bal" [class.neg]="b.negative">{{ b.balance }}</span>
+            <span class="am-col-idx">{{ i + 1 }}</span>
+          </div>
+        </div>
+
+        <p class="am-note" [attr.data-tone]="bankValid ? 'ok' : 'bad'">
+          <ng-container *ngIf="bankValid">
+            <strong>Valid amortized bound.</strong> With a charge of {{ bankCharge }}, the balance stays ≥ 0 after every prefix.
+            Total amortized {{ bankCharge }} × {{ bankM }} = {{ bankCharge * bankM }} ≥ total actual {{ bankTotalActual }} — the charge is a true upper bound.
+          </ng-container>
+          <ng-container *ngIf="!bankValid">
+            <strong>The bound breaks.</strong> The balance goes negative at operation {{ bankFirstBreak + 1 }} —
+            an expensive operation arrived before enough cheap ones prepaid it. A charge of {{ bankCharge }} is too small.
+          </ng-container>
+        </p>
+      </div>
+
+      <aside class="am-side">
+        <div class="am-panel">
+          <h4 class="am-panel-title">This sequence</h4>
+          <div class="am-stats">
+            <div class="am-stat"><span>Operations m</span><strong>{{ bankM }}</strong></div>
+            <div class="am-stat"><span>Total actual cost</span><strong>{{ bankTotalActual }}</strong></div>
+            <div class="am-stat"><span>Charge × m</span><strong>{{ bankCharge * bankM }}</strong></div>
+            <div class="am-stat"><span>True average</span><strong>{{ (bankTotalActual / bankM).toFixed(2) }}</strong></div>
+          </div>
+        </div>
+        <div class="am-panel" data-tone="gold">
+          <h4 class="am-panel-title">The accounting invariant</h4>
+          <p class="am-hint">A cheap operation charged more than it costs banks the surplus. A spike spends that credit. The amortized charge is valid <strong>iff</strong> the stored credit is never negative after <em>any</em> prefix — not just at the end.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L2 — MULTIPOP STACK ═════════════════════ -->
+  <ng-container *ngIf="artifactId === 'multipop-stack'">
+    <header class="am-head">
+      <span class="am-kicker">Aggregate &amp; Accounting</span>
+      <h3>Stack with MULTIPOP</h3>
+      <p>One MULTIPOP can be expensive, yet any sequence of m operations costs O(m). The reason: no item is ever popped twice.</p>
+    </header>
+
+    <div class="am-controls">
+      <button type="button" class="am-btn primary" (click)="stackPush()">Push</button>
+      <button type="button" class="am-btn" (click)="stackPop()">Pop</button>
+      <label class="am-field"><span>k</span>
+        <input type="number" min="1" max="20" [(ngModel)]="stackMultipopK" /></label>
+      <button type="button" class="am-btn" (click)="stackMultipop()">Multipop(k)</button>
+      <button type="button" class="am-btn ghost" (click)="stackReset()">Reset</button>
+    </div>
+
+    <div class="am-split">
+      <div class="am-main">
+        <div class="am-stackwrap">
+          <div class="am-stack">
+            <div class="am-empty" *ngIf="stackItems.length === 0">empty stack</div>
+            <div class="am-item" *ngFor="let v of stackItems.slice().reverse()">
+              <span class="am-item-val">{{ v }}</span>
+              <span class="am-credit" title="prepaid credit for this item's future pop">● 1 credit</span>
+            </div>
+          </div>
+          <span class="am-stack-base">stack base</span>
+        </div>
+        <p class="am-note" data-tone="info" *ngIf="stackOps.length">{{ stackOps[0].note }}</p>
+        <p class="am-note" data-tone="info" *ngIf="!stackOps.length">Push some items, then Pop or Multipop. Each pushed item arrives with one unit of credit prepaid.</p>
+
+        <div class="am-oplog" *ngIf="stackOps.length">
+          <span class="am-label">Recent operations</span>
+          <div class="am-oprow" *ngFor="let op of stackOps">
+            <span class="am-optag" [attr.data-kind]="op.kind">{{ op.kind }}</span>
+            <span class="am-opcost">actual cost {{ op.cost }}</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="am-side">
+        <div class="am-panel">
+          <h4 class="am-panel-title">Operations</h4>
+          <div class="am-code">
+            <div class="am-cline" *ngFor="let ln of stackPseudocode; let li = index"
+                 [class.active]="stackActiveLine === li">
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="am-panel">
+          <h4 class="am-panel-title">Cost accounting</h4>
+          <div class="am-stats">
+            <div class="am-stat"><span>Last op cost</span><strong>{{ stackLastCost }}</strong></div>
+            <div class="am-stat"><span>Items on stack</span><strong>{{ stackItems.length }}</strong></div>
+            <div class="am-stat"><span>Total PUSHes</span><strong>{{ stackPushCount }}</strong></div>
+            <div class="am-stat"><span>Total actual cost</span><strong>{{ stackActualTotal }}</strong></div>
+          </div>
+          <p class="am-hint"><strong>Aggregate proof:</strong> every pop (single or inside a multipop) removes an item that was pushed exactly once. So total cost ≤ pushes + pops ≤ 2 × {{ stackPushCount }} = {{ stackAmortizedBound }}. Amortized cost per operation is <strong>O(1)</strong>.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L3 — BINARY COUNTER ═════════════════════ -->
+  <ng-container *ngIf="artifactId === 'binary-counter-amortized'">
+    <header class="am-head">
+      <span class="am-kicker">Aggregate Method</span>
+      <h3>Binary Counter</h3>
+      <p>A single INCREMENT can flip many bits, but n increments flip fewer than 2n bits in total — so the amortized cost is just 2.</p>
+    </header>
+
+    <div class="am-controls">
+      <button type="button" class="am-btn primary" (click)="counterIncrement()">Increment</button>
+      <button type="button" class="am-btn" (click)="counterRun(8)">+8</button>
+      <button type="button" class="am-btn" (click)="counterRun(64)">+64</button>
+      <button type="button" class="am-btn ghost" (click)="counterReset()">Reset</button>
+    </div>
+
+    <div class="am-split">
+      <div class="am-main">
+        <div class="am-bits">
+          <div class="am-bit" *ngFor="let b of counterBitsHigh"
+               [class.one]="b.val === 1" [class.flipped]="b.flipped">
+            <span class="am-bit-val">{{ b.val }}</span>
+            <span class="am-bit-idx">2<sup>{{ b.idx }}</sup></span>
+          </div>
+        </div>
+        <p class="am-note" data-tone="info">
+          Counter value <strong>{{ counterValue }}</strong> after {{ counterIncrements }} increment(s).
+          <ng-container *ngIf="counterIncrements > 0"> The last increment flipped <strong>{{ counterLastFlips }}</strong> bit(s) — that is its actual cost.</ng-container>
+        </p>
+
+        <div class="am-flipfreq">
+          <span class="am-label">How often each bit flips</span>
+          <div class="am-freq-row" *ngFor="let f of counterBitFreq">
+            <span class="am-freq-bit">bit {{ f.bit }}</span>
+            <div class="am-freq-track">
+              <div class="am-freq-bar" [style.width.%]="counterIncrements ? (f.flips / counterIncrements) * 100 : 0"></div>
+            </div>
+            <span class="am-freq-cnt">{{ f.flips }} flips · every 2{{ f.bit > 0 ? '^' + f.bit : '⁰' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <aside class="am-side">
+        <div class="am-panel">
+          <h4 class="am-panel-title">INCREMENT(A)</h4>
+          <div class="am-code">
+            <div class="am-cline" *ngFor="let ln of counterPseudocode">
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="am-panel" data-tone="gold">
+          <h4 class="am-panel-title">Aggregate analysis</h4>
+          <div class="am-stats">
+            <div class="am-stat"><span>Increments n</span><strong>{{ counterIncrements }}</strong></div>
+            <div class="am-stat"><span>Total bit flips</span><strong>{{ counterTotalFlips }}</strong></div>
+            <div class="am-stat"><span>2n bound</span><strong>{{ counterBound }}</strong></div>
+            <div class="am-stat"><span>Avg flips / incr.</span><strong>{{ counterAvgFlips }}</strong></div>
+          </div>
+          <p class="am-hint">Bit j flips once every 2ʲ increments, so total flips = Σ ⌊n/2ʲ⌋ &lt; n(1 + ½ + ¼ + …) = 2n. Total flips stay below the 2n bound — amortized cost <strong>2</strong>.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L4 — POTENTIAL METHOD ═══════════════════ -->
+  <ng-container *ngIf="artifactId === 'potential-method'">
+    <header class="am-head">
+      <span class="am-kicker">Potential Method</span>
+      <h3>Potential Method Stepper</h3>
+      <p>On a binary counter, take Φ = the number of 1-bits. Each increment's amortized cost ĉ = c + ΔΦ comes out to a flat 2.</p>
+    </header>
+
+    <div class="am-controls">
+      <button type="button" class="am-btn primary" (click)="potStep()" [disabled]="potDone">Increment (one step)</button>
+      <button type="button" class="am-btn ghost" (click)="potReset()">Reset</button>
+      <span class="am-phi">Φ now = {{ potPhiNow }} ones</span>
+    </div>
+
+    <div class="am-bits am-bits-sm">
+      <div class="am-bit" *ngFor="let v of potBitsHigh" [class.one]="v === 1">
+        <span class="am-bit-val">{{ v }}</span>
+      </div>
+    </div>
+
+    <div class="am-split">
+      <div class="am-main">
+        <div class="am-tablewrap">
+          <table class="am-table">
+            <thead>
+              <tr><th>i</th><th>before → after</th><th>c<sub>i</sub></th><th>ΔΦ</th><th>ĉ<sub>i</sub> = c + ΔΦ</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="potRows.length === 0"><td colspan="5" class="am-table-empty">Press “Increment” to record a step.</td></tr>
+              <tr *ngFor="let r of potRows">
+                <td>{{ r.i }}</td>
+                <td class="am-mono">{{ r.before }} → {{ r.after }}</td>
+                <td>{{ r.c }}</td>
+                <td [class.neg]="r.dPhi < 0">{{ r.dPhi > 0 ? '+' : '' }}{{ r.dPhi }}</td>
+                <td class="am-amort">{{ r.amortized }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="am-note" data-tone="ok" *ngIf="potRows.length">
+          Every amortized cost is <strong>2</strong>: the t reset bits cost t and drop Φ by t; the one set bit costs 1 and raises Φ by 1. The expensive resets are paid by the potential they release.
+        </p>
+      </div>
+
+      <aside class="am-side">
+        <div class="am-panel" data-tone="green">
+          <h4 class="am-panel-title">Telescoping sum</h4>
+          <div class="am-stats">
+            <div class="am-stat"><span>Σ actual cᵢ</span><strong>{{ potTotalActual }}</strong></div>
+            <div class="am-stat"><span>Σ amortized ĉᵢ</span><strong>{{ potTotalAmortized }}</strong></div>
+            <div class="am-stat"><span>Φ(D₀)</span><strong>0</strong></div>
+            <div class="am-stat"><span>Φ(Dₙ)</span><strong>{{ potPhiNow }}</strong></div>
+          </div>
+          <p class="am-hint">Σĉᵢ = Σcᵢ + Φ(Dₙ) − Φ(D₀). Since Φ(D₀) = 0 and Φ(Dₙ) ≥ 0, the actual total Σcᵢ ≤ Σĉᵢ — the amortized sum is always an upper bound.</p>
+        </div>
+        <div class="am-panel">
+          <h4 class="am-panel-title">Potential-method checklist</h4>
+          <ol class="am-checklist">
+            <li *ngFor="let step of potChecklist">{{ step }}</li>
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+</section>

@@ -1,0 +1,340 @@
+<section class="bh-card" *ngIf="artifactId">
+
+  <!-- ═══════════════════════════ L1 — BINOMIAL TREE EXPLORER ═════════════ -->
+  <ng-container *ngIf="artifactId === 'binomial-tree-explorer'">
+    <header class="bh-head">
+      <span class="bh-kicker">Binomial Trees</span>
+      <h3>Binomial Tree Explorer</h3>
+      <p>B₀ is a single node; for k ≥ 1, Bₖ is two B₍ₖ₋₁₎ trees linked at the root. Watch the size double with every step of k.</p>
+    </header>
+
+    <div class="bh-tabs">
+      <span class="bh-label">Degree k</span>
+      <button type="button" *ngFor="let k of [0,1,2,3,4]" class="bh-tab"
+              [class.active]="treeK === k" (click)="setTreeK(k)">B{{ k }}</button>
+      <button type="button" class="bh-tab toggle" [class.active]="treeShowSplit"
+              (click)="treeShowSplit = !treeShowSplit" [disabled]="treeK === 0">
+        {{ treeShowSplit ? 'Hide' : 'Show' }} the two B{{ treeK > 0 ? treeK - 1 : 0 }}
+      </button>
+    </div>
+
+    <div class="bh-split">
+      <div class="bh-main">
+        <div class="bh-canvas">
+          <svg [attr.viewBox]="'0 0 ' + treeLayout.w + ' ' + treeLayout.h" preserveAspectRatio="xMidYMin meet">
+            <line *ngFor="let e of treeLayout.edges" [attr.x1]="e.x1" [attr.y1]="e.y1"
+                  [attr.x2]="e.x2" [attr.y2]="e.y2" stroke="#475569" stroke-width="2"/>
+            <g *ngFor="let n of treeLayout.nodes">
+              <circle [attr.cx]="n.x" [attr.cy]="n.y" r="16"
+                      [attr.fill]="treeNodeHalf(n.id) === 'linked' ? '#7c3aed' : (n.root ? '#0ea5e9' : '#1e293b')"
+                      [attr.stroke]="treeNodeHalf(n.id) === 'linked' ? '#a78bfa' : (n.root ? '#38bdf8' : '#475569')"
+                      stroke-width="2"/>
+              <text [attr.x]="n.x" [attr.y]="n.y + 5" text-anchor="middle"
+                    font-size="13" font-weight="800" fill="#f1f5f9">{{ n.key }}</text>
+            </g>
+          </svg>
+        </div>
+        <p class="bh-note" *ngIf="treeShowSplit && treeK > 0" data-tone="info">
+          The purple subtree is one whole B{{ treeK - 1 }}; the blue root plus the rest is the other B{{ treeK - 1 }}.
+          Linking makes the larger-key root a child of the smaller-key root.
+        </p>
+        <p class="bh-note" *ngIf="!treeShowSplit || treeK === 0" data-tone="info">
+          The root is highlighted in blue. Bₖ's root has exactly k children — the roots of B₍ₖ₋₁₎, B₍ₖ₋₂₎, …, B₀.
+        </p>
+      </div>
+
+      <aside class="bh-side">
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">Properties of B{{ treeK }}</h4>
+          <div class="bh-stats">
+            <div class="bh-stat"><span>Nodes 2ᵏ</span><strong>{{ treeNodeCount }}</strong></div>
+            <div class="bh-stat"><span>Height k</span><strong>{{ treeK }}</strong></div>
+            <div class="bh-stat"><span>Root degree</span><strong>{{ treeK }}</strong></div>
+            <div class="bh-stat"><span>Leaves</span><strong>{{ treeK === 0 ? 1 : treeNodeCount / 2 }}</strong></div>
+          </div>
+        </div>
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">Nodes per depth — C(k, d)</h4>
+          <div class="bh-depth-rows">
+            <div class="bh-depth-row" *ngFor="let r of treeDepthRows">
+              <span class="bh-depth-lbl">depth {{ r.depth }}</span>
+              <div class="bh-depth-bar"><span [style.width.%]="(r.count / treeNodeCount) * 100 + 6"></span></div>
+              <span class="bh-depth-cnt">{{ r.count }}</span>
+            </div>
+          </div>
+          <p class="bh-hint">Depth d holds C(k, d) nodes — the binomial coefficients, which is where the name comes from.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L2 — BINOMIAL HEAP ANATOMY ══════════════ -->
+  <ng-container *ngIf="artifactId === 'binomial-heap-anatomy'">
+    <header class="bh-head">
+      <span class="bh-kicker">Heap Structure</span>
+      <h3>Binomial Heap Anatomy</h3>
+      <p>A heap of n nodes is a forest of binomial trees — one Bₖ for every 1-bit of n. That is why there are only O(log n) trees.</p>
+    </header>
+
+    <div class="bh-controls">
+      <label class="bh-field"><span>Heap size n</span>
+        <input type="number" min="1" max="31" [ngModel]="anatomyN" (ngModelChange)="setAnatomyN($event)" /></label>
+      <span class="bh-binary">
+        n = {{ anatomyN }} =
+        <span *ngFor="let b of anatomyBits" class="bh-bit" [class.set]="b.set">{{ b.set ? 1 : 0 }}</span>
+        <small>binary</small>
+      </span>
+    </div>
+
+    <div class="bh-split">
+      <div class="bh-main">
+        <div class="bh-canvas">
+          <svg [attr.viewBox]="'0 0 ' + anatomyLayout.w + ' ' + anatomyLayout.h" preserveAspectRatio="xMidYMin meet">
+            <line *ngFor="let e of anatomyLayout.edges" [attr.x1]="e.x1" [attr.y1]="e.y1"
+                  [attr.x2]="e.x2" [attr.y2]="e.y2" stroke="#475569" stroke-width="2"/>
+            <g *ngFor="let n of anatomyLayout.nodes">
+              <circle [attr.cx]="n.x" [attr.cy]="n.y" r="15"
+                      [attr.fill]="n.root ? '#0ea5e9' : '#1e293b'"
+                      [attr.stroke]="n.root ? '#38bdf8' : '#475569'" stroke-width="2"/>
+              <text [attr.x]="n.x" [attr.y]="n.y + 4" text-anchor="middle"
+                    font-size="12" font-weight="800" fill="#f1f5f9">{{ n.key }}</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="bh-rootscan">
+          <span class="bh-label">MINIMUM scans the root list:</span>
+          <div class="bh-roots">
+            <span *ngFor="let r of anatomyRootList; let i = index" class="bh-rootchip"
+                  [class.active]="anatomyRootActive(i)" [class.scanned]="anatomyRootScanned(i)">{{ r.key }}</span>
+          </div>
+        </div>
+        <p class="bh-note" data-tone="info">
+          <ng-container *ngIf="anatomyScannedMin === null">Click “Scan next root” to walk the root list looking for the minimum key.</ng-container>
+          <ng-container *ngIf="anatomyScannedMin !== null">Smallest root seen so far: <strong>{{ anatomyScannedMin }}</strong>.
+            <ng-container *ngIf="anatomyScanDone"> All {{ anatomyTreeCount }} roots checked — that is the heap minimum, found in O(log n).</ng-container></ng-container>
+        </p>
+        <div class="bh-controls">
+          <button type="button" class="bh-btn primary" (click)="anatomyScanNext()" [disabled]="anatomyScanDone">Scan next root ›</button>
+          <button type="button" class="bh-btn ghost" (click)="anatomyScanReset()">Reset scan</button>
+        </div>
+      </div>
+
+      <aside class="bh-side">
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">This heap</h4>
+          <div class="bh-stats">
+            <div class="bh-stat"><span>Nodes n</span><strong>{{ anatomyN }}</strong></div>
+            <div class="bh-stat"><span>Trees in forest</span><strong>{{ anatomyTreeCount }}</strong></div>
+            <div class="bh-stat"><span>1-bits of n</span><strong>{{ anatomyTreeCount }}</strong></div>
+            <div class="bh-stat"><span>⌊log₂n⌋+1</span><strong>{{ anatomyMaxRoots }}</strong></div>
+          </div>
+        </div>
+        <div class="bh-panel" data-tone="blue">
+          <h4 class="bh-panel-title">Binary = forest</h4>
+          <p class="bh-hint">Bit k of n is 1 exactly when the heap holds a Bₖ tree. The number of trees equals the number of 1-bits, which is at most ⌊log₂n⌋+1 — so every root-list walk is O(log n).</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L3 — BINOMIAL HEAP UNION ════════════════ -->
+  <ng-container *ngIf="artifactId === 'binomial-heap-union'">
+    <header class="bh-head">
+      <span class="bh-kicker">The Core Operation</span>
+      <h3>Binomial Heap Union</h3>
+      <p>UNION merges two heaps degree by degree. Linking equal-degree trees is exactly the carry of binary addition: {{ unionN1 }} + {{ unionN2 }} = {{ unionN1 + unionN2 }}.</p>
+    </header>
+
+    <div class="bh-addition">
+      <div class="bh-add-row">
+        <span class="bh-add-lbl">H1 ({{ unionN1 }})</span>
+        <span *ngFor="let d of [4,3,2,1,0]" class="bh-add-bit" [class.one]="unionBitClass(unionH1, d)">
+          {{ unionBitClass(unionH1, d) ? 1 : 0 }}</span>
+      </div>
+      <div class="bh-add-row">
+        <span class="bh-add-lbl">H2 ({{ unionN2 }})</span>
+        <span *ngFor="let d of [4,3,2,1,0]" class="bh-add-bit" [class.one]="unionBitClass(unionH2, d)">
+          {{ unionBitClass(unionH2, d) ? 1 : 0 }}</span>
+      </div>
+      <div class="bh-add-row result">
+        <span class="bh-add-lbl">Result</span>
+        <span *ngFor="let d of [4,3,2,1,0]" class="bh-add-bit"
+              [class.one]="unionBitClass(unionResultSoFar, d)"
+              [class.pending]="d > unionDegree"
+              [class.current]="d === unionDegree">
+          {{ d > unionDegree ? '·' : (unionBitClass(unionResultSoFar, d) ? 1 : 0) }}</span>
+      </div>
+    </div>
+
+    <div class="bh-split">
+      <div class="bh-main">
+        <div class="bh-union-stage" *ngIf="unionFrame as f">
+          <div class="bh-union-deg">Degree {{ f.degree }}</div>
+          <div class="bh-union-trees">
+            <span class="bh-union-empty" *ngIf="f.inputs.length === 0 && !f.carryIn">no trees here</span>
+            <span class="bh-treebox" *ngFor="let t of f.inputs" [attr.data-src]="t.src">
+              B{{ t.degree }} · root {{ t.key }}<small>{{ t.src }}</small>
+            </span>
+            <span class="bh-treebox carry" *ngIf="f.carryIn">
+              B{{ f.carryIn.degree }} · root {{ f.carryIn.key }}<small>carry in</small>
+            </span>
+          </div>
+          <div class="bh-union-arrow" *ngIf="f.action === 'link'">↓ link</div>
+          <div class="bh-union-out">
+            <span class="bh-treebox result" *ngIf="f.result">B{{ f.result.degree }} · root {{ f.result.key }}<small>stays</small></span>
+            <span class="bh-treebox carry" *ngIf="f.carryOut">B{{ f.carryOut.degree }} · root {{ f.carryOut.key }}<small>carry out</small></span>
+            <span class="bh-union-empty" *ngIf="!f.result && !f.carryOut">empty</span>
+          </div>
+        </div>
+        <p class="bh-note" [attr.data-tone]="unionFrame.action === 'link' ? 'gold' : 'info'">{{ unionFrame.note }}</p>
+        <div class="bh-controls">
+          <button type="button" class="bh-btn" (click)="unionPrev()" [disabled]="unionStep === 0">‹ Prev</button>
+          <button type="button" class="bh-btn primary" (click)="unionNext()" [disabled]="unionDone">Step ›</button>
+          <button type="button" class="bh-btn" (click)="unionRun()" [disabled]="unionDone">Run to end</button>
+          <button type="button" class="bh-btn ghost" (click)="unionRestart()">Restart</button>
+          <span class="bh-step-count">degree {{ unionStep }} / {{ unionFrames.length - 1 }}</span>
+        </div>
+      </div>
+
+      <aside class="bh-side">
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">UNION as binary addition</h4>
+          <div class="bh-code">
+            <div class="bh-cline" *ngFor="let ln of unionPseudocode; let li = index"
+                 [class.active]="unionActiveLine === li">
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="bh-panel" data-tone="gold">
+          <h4 class="bh-panel-title">Why O(log n)</h4>
+          <p class="bh-hint">There are O(log n) degrees, and each degree does O(1) work — at most one link. {{ unionN1 }} + {{ unionN2 }} = {{ unionN1 + unionN2 }} cascades a carry through every position, ending as a single B4.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L4 — BINOMIAL HEAP OPERATIONS ═══════════ -->
+  <ng-container *ngIf="artifactId === 'binomial-heap-operations'">
+    <header class="bh-head">
+      <span class="bh-kicker">Heap Operations</span>
+      <h3>Binomial Heap Operations</h3>
+      <p>INSERT, EXTRACT-MIN and DECREASE-KEY all reduce to UNION and a sift — each running in O(log n).</p>
+    </header>
+
+    <div class="bh-controls">
+      <label class="bh-field"><span>Key</span>
+        <input type="number" min="0" max="99" [(ngModel)]="opKey" /></label>
+      <button type="button" class="bh-btn primary" (click)="opInsert()">Insert</button>
+      <button type="button" class="bh-btn" (click)="opExtractMin()">Extract-min</button>
+      <button type="button" class="bh-btn" (click)="opDecreaseKey()">Decrease-key</button>
+      <button type="button" class="bh-btn ghost" (click)="opReset()">Reset</button>
+    </div>
+
+    <div class="bh-split">
+      <div class="bh-main">
+        <div class="bh-canvas">
+          <svg [attr.viewBox]="'0 0 ' + opLayout.w + ' ' + opLayout.h" preserveAspectRatio="xMidYMin meet">
+            <line *ngFor="let e of opLayout.edges" [attr.x1]="e.x1" [attr.y1]="e.y1"
+                  [attr.x2]="e.x2" [attr.y2]="e.y2" stroke="#475569" stroke-width="2"/>
+            <g *ngFor="let n of opLayout.nodes">
+              <circle [attr.cx]="n.x" [attr.cy]="n.y" r="15"
+                      [attr.fill]="opNodeState(n.id) === 'mark' ? '#f59e0b' : (n.root ? '#0ea5e9' : '#1e293b')"
+                      [attr.stroke]="opNodeState(n.id) === 'mark' ? '#fbbf24' : (n.root ? '#38bdf8' : '#475569')"
+                      stroke-width="2"/>
+              <text [attr.x]="n.x" [attr.y]="n.y + 4" text-anchor="middle" font-size="12" font-weight="800"
+                    [attr.fill]="opNodeState(n.id) === 'mark' ? '#2a1700' : '#f1f5f9'">{{ n.key }}</text>
+            </g>
+          </svg>
+        </div>
+        <p class="bh-note" data-tone="info">{{ opMessage }}</p>
+      </div>
+
+      <aside class="bh-side">
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">{{ opPseudocodes[opMode][0] }}</h4>
+          <div class="bh-code">
+            <div class="bh-cline" *ngFor="let ln of opPseudocodes[opMode]; let li = index"
+                 [class.active]="li > 0">
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">Heap state</h4>
+          <div class="bh-stats">
+            <div class="bh-stat"><span>Nodes n</span><strong>{{ opN }}</strong></div>
+            <div class="bh-stat"><span>Trees</span><strong>{{ opTreeCount }}</strong></div>
+            <div class="bh-stat"><span>Minimum</span><strong>{{ opMinKey === null ? '—' : opMinKey }}</strong></div>
+            <div class="bh-stat"><span>n in binary</span><strong>{{ opN.toString(2) }}</strong></div>
+          </div>
+          <p class="bh-hint">DELETE(x) is DECREASE-KEY(x, −∞) followed by EXTRACT-MIN — no separate code needed.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L5 — REVIEW: INSERT = COUNTER ═══════════ -->
+  <ng-container *ngIf="artifactId === 'binomial-heap-review'">
+    <header class="bh-head">
+      <span class="bh-kicker">Unit 6 Review</span>
+      <h3>Insertion is a Binary Counter</h3>
+      <p>Insert keys one at a time. The forest evolves exactly like a binary counter incrementing — and the total linking work stays linear.</p>
+    </header>
+
+    <div class="bh-controls">
+      <button type="button" class="bh-btn primary" (click)="reviewInsert()" [disabled]="reviewDone">
+        Insert next key{{ reviewDone ? ' (done)' : '' }}
+      </button>
+      <button type="button" class="bh-btn ghost" (click)="reviewReset()">Reset</button>
+      <span class="bh-counter">counter = {{ reviewCount }} = <strong>{{ reviewBinary }}</strong><small>binary</small></span>
+    </div>
+
+    <div class="bh-split">
+      <div class="bh-main">
+        <div class="bh-canvas" *ngIf="reviewCount > 0">
+          <svg [attr.viewBox]="'0 0 ' + reviewLayout.w + ' ' + reviewLayout.h" preserveAspectRatio="xMidYMin meet">
+            <line *ngFor="let e of reviewLayout.edges" [attr.x1]="e.x1" [attr.y1]="e.y1"
+                  [attr.x2]="e.x2" [attr.y2]="e.y2" stroke="#475569" stroke-width="2"/>
+            <g *ngFor="let n of reviewLayout.nodes">
+              <circle [attr.cx]="n.x" [attr.cy]="n.y" r="14"
+                      [attr.fill]="n.root ? '#0ea5e9' : '#1e293b'"
+                      [attr.stroke]="n.root ? '#38bdf8' : '#475569'" stroke-width="2"/>
+              <text [attr.x]="n.x" [attr.y]="n.y + 4" text-anchor="middle" font-size="11" font-weight="800" fill="#f1f5f9">{{ n.key }}</text>
+            </g>
+          </svg>
+        </div>
+        <p class="bh-note" data-tone="info" *ngIf="reviewCount === 0">The heap is empty (counter 0000). Insert a key to begin.</p>
+        <p class="bh-note" data-tone="info" *ngIf="reviewCount > 0">
+          {{ reviewCount }} insert(s) → {{ reviewTreeCount }} tree(s), matching the 1-bits of {{ reviewBinary }}.
+          Total links performed: <strong>{{ reviewLinks }}</strong>.
+        </p>
+      </div>
+
+      <aside class="bh-side">
+        <div class="bh-panel" data-tone="gold">
+          <h4 class="bh-panel-title">Amortized insert</h4>
+          <div class="bh-stats">
+            <div class="bh-stat"><span>Inserts</span><strong>{{ reviewCount }}</strong></div>
+            <div class="bh-stat"><span>Total links</span><strong>{{ reviewLinks }}</strong></div>
+            <div class="bh-stat"><span>Links / insert</span><strong>{{ reviewAmortized }}</strong></div>
+            <div class="bh-stat"><span>Trees now</span><strong>{{ reviewTreeCount }}</strong></div>
+          </div>
+          <p class="bh-hint">A single insert can cost O(log n) links, but each link happens only when a carry propagates. Across n inserts the total is &lt; n links — so insertion is <strong>O(1) amortized</strong>.</p>
+        </div>
+        <div class="bh-panel">
+          <h4 class="bh-panel-title">Operation costs</h4>
+          <div class="bh-cost-rows">
+            <div class="bh-cost-row" *ngFor="let c of reviewComplexity">
+              <span class="bh-cost-op">{{ c.op }}</span>
+              <span class="bh-cost-val">{{ c.cost }}</span>
+              <span class="bh-cost-why">{{ c.why }}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+</section>

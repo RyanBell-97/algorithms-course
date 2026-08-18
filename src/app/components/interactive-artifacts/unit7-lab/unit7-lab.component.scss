@@ -1,0 +1,283 @@
+/* ===========================================================================
+ * Unit 7 amortized-analysis laboratory — shared shell + 4 artifacts.
+ * Dark panels, LTR-locked, mobile-first, no clipping or page overflow.
+ * ======================================================================== */
+:host { display: block; }
+
+* { box-sizing: border-box; }
+
+.am-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 22px;
+  margin: 28px 0;
+  color: #e2e8f0;
+  direction: ltr;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+  @media (max-width: 560px) { padding: 16px; border-radius: 13px; }
+}
+
+.am-head {
+  margin-bottom: 16px;
+  .am-kicker {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: #5eead4;
+    background: rgba(20, 184, 166, .14);
+    border: 1px solid rgba(20, 184, 166, .34);
+    padding: 3px 9px;
+    border-radius: 5px;
+  }
+  h3 { margin: 9px 0 6px; font-size: 1.2rem; color: #f8fafc; font-weight: 800; }
+  p  { margin: 0; font-size: .88rem; color: #94a3b8; line-height: 1.55;
+       em { color: #cbd5e1; font-style: italic; } }
+}
+
+.am-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  @media (max-width: 820px) { grid-template-columns: 1fr; }
+}
+.am-main { min-width: 0; }
+.am-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.am-panel {
+  background: #0d1b2e;
+  border: 1px solid #26364f;
+  border-radius: 12px;
+  padding: 13px 14px;
+  &[data-tone="gold"]  { background: rgba(245, 158, 11, .08); border-color: rgba(245, 158, 11, .34); }
+  &[data-tone="green"] { background: rgba(16, 185, 129, .08); border-color: rgba(16, 185, 129, .34); }
+}
+.am-panel-title {
+  margin: 0 0 9px;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #5eead4;
+}
+.am-label {
+  display: block;
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+.am-hint {
+  margin: 8px 0 0;
+  font-size: .82rem;
+  line-height: 1.55;
+  color: #94a3b8;
+  strong { color: #cbd5e1; }
+  em { color: #cbd5e1; font-style: italic; }
+}
+
+.am-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+
+.am-btn {
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #cbd5e1;
+  transition: filter .12s, opacity .12s;
+  white-space: nowrap;
+  &:hover:not(:disabled) { filter: brightness(1.22); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+  &.primary { background: #14b8a6; border-color: #14b8a6; color: #042f2a; }
+  &.ghost   { background: transparent; color: #94a3b8; }
+}
+
+.am-field {
+  display: flex; align-items: center; gap: 6px;
+  span { font-size: .74rem; font-weight: 800; text-transform: uppercase; color: #64748b; }
+  input {
+    width: 64px;
+    background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+    border-radius: 7px; padding: 7px 9px; font-size: .85rem;
+    font-family: 'Fira Code', 'Cascadia Code', monospace;
+    &:focus { outline: none; border-color: #14b8a6; }
+  }
+}
+.am-slider {
+  display: flex; flex-direction: column; gap: 5px; flex: 1 1 240px;
+  span { font-size: .82rem; color: #94a3b8; strong { color: #f1f5f9; font-size: .95rem; } }
+  input { width: 100%; accent-color: #14b8a6; }
+}
+
+.am-code { display: flex; flex-direction: column; gap: 1px; }
+.am-cline {
+  padding: 3px 7px; border-radius: 5px; transition: background .15s;
+  code { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: .73rem;
+         color: #cbd5e1; white-space: pre-wrap; word-break: break-word; }
+  &.active { background: rgba(20, 184, 166, .2); box-shadow: 0 0 0 1px #14b8a6 inset;
+    code { color: #99f6e4; } }
+}
+
+.am-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.am-stat {
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 7px 9px; border-radius: 8px;
+  background: #0f172a; border: 1px solid #1e293b;
+  span { font-size: .66rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+  strong { font-size: 1.1rem; color: #f1f5f9; font-weight: 800; }
+}
+
+.am-note {
+  margin: 12px 0 0;
+  font-size: .83rem; line-height: 1.55; color: #cbd5e1;
+  background: #0d1b2e; border: 1px solid #1e293b; border-radius: 8px;
+  padding: 10px 12px; min-height: 50px;
+  border-left: 3px solid #334155;
+  strong { color: #f8fafc; }
+  &[data-tone="info"] { border-left-color: #14b8a6; }
+  &[data-tone="ok"]   { border-left-color: #10b981; }
+  &[data-tone="bad"]  { border-left-color: #ef4444; }
+}
+
+/* =========================================================================
+ * L1 — AMORTIZED BANK
+ * ====================================================================== */
+.am-methods {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+  @media (max-width: 640px) { grid-template-columns: 1fr; }
+}
+.am-method {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 10px 12px; border-radius: 10px; border: 1px solid;
+  strong { font-size: .82rem; }
+  span { font-size: .76rem; color: #94a3b8; line-height: 1.45; }
+  &[data-tone="blue"]  { background: rgba(59, 130, 246, .08); border-color: rgba(59, 130, 246, .32); strong { color: #93c5fd; } }
+  &[data-tone="gold"]  { background: rgba(245, 158, 11, .08); border-color: rgba(245, 158, 11, .32); strong { color: #fcd34d; } }
+  &[data-tone="green"] { background: rgba(16, 185, 129, .08); border-color: rgba(16, 185, 129, .32); strong { color: #6ee7b7; } }
+}
+
+.am-chart {
+  display: flex; gap: 4px; align-items: stretch;
+  background: #060e1c; border: 1px solid #1e293b; border-radius: 11px;
+  padding: 10px 8px; overflow-x: auto;
+}
+.am-col {
+  flex: 1 0 34px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.am-col-cost { font-size: .62rem; color: #64748b; font-weight: 700; }
+.am-col-track {
+  width: 100%; height: 96px;
+  display: flex; align-items: flex-end; justify-content: center;
+  border-bottom: 2px solid #334155;
+}
+.am-col-bar {
+  width: 76%; min-height: 3px; border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, #2dd4bf, #0d9488);
+  transition: height .2s;
+  &.neg { background: linear-gradient(180deg, #f87171, #dc2626); }
+}
+.am-col-bal { font-size: .74rem; font-weight: 800; color: #5eead4;
+  &.neg { color: #f87171; } }
+.am-col-idx { font-size: .6rem; color: #475569; font-weight: 700; }
+
+/* =========================================================================
+ * L2 — MULTIPOP STACK
+ * ====================================================================== */
+.am-stackwrap { display: flex; flex-direction: column; align-items: center; }
+.am-stack {
+  display: flex; flex-direction: column; gap: 4px;
+  width: 100%; max-width: 320px;
+  background: #060e1c; border: 1px solid #1e293b; border-radius: 11px;
+  padding: 10px; min-height: 90px; justify-content: flex-end;
+}
+.am-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(20, 184, 166, .14); border: 1.5px solid #14b8a6;
+  .am-item-val { font-weight: 800; color: #99f6e4; font-size: .9rem; }
+  .am-credit { font-size: .68rem; font-weight: 700; color: #fcd34d; }
+}
+.am-empty { text-align: center; color: #475569; font-style: italic; font-size: .82rem; padding: 18px 0; }
+.am-stack-base { font-size: .66rem; color: #475569; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+
+.am-oplog { margin-top: 14px; }
+.am-oprow {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  padding: 5px 9px; border-radius: 7px; background: #0d1b2e; border: 1px solid #1e293b;
+}
+.am-optag {
+  font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+  padding: 2px 8px; border-radius: 99px;
+  &[data-kind="push"]     { background: rgba(20, 184, 166, .18); color: #5eead4; }
+  &[data-kind="pop"]      { background: rgba(59, 130, 246, .18); color: #93c5fd; }
+  &[data-kind="multipop"] { background: rgba(245, 158, 11, .18); color: #fcd34d; }
+}
+.am-opcost { font-size: .76rem; color: #94a3b8; }
+
+/* =========================================================================
+ * L3 — BINARY COUNTER  +  L4 bits
+ * ====================================================================== */
+.am-bits {
+  display: flex; gap: 5px; flex-wrap: wrap;
+  background: #060e1c; border: 1px solid #1e293b; border-radius: 11px;
+  padding: 10px; justify-content: center;
+}
+.am-bits-sm { margin-bottom: 14px; }
+.am-bit {
+  flex: 0 0 auto;
+  width: 44px; height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 8px;
+  background: #111c30; border: 2px solid #334155;
+  transition: all .18s;
+  .am-bit-val { font-size: 1.1rem; font-weight: 800; color: #475569; font-family: 'Fira Code', monospace; }
+  .am-bit-idx { font-size: .58rem; color: #64748b; font-weight: 700; }
+  &.one { background: rgba(20, 184, 166, .16); border-color: #14b8a6;
+    .am-bit-val { color: #5eead4; } }
+  &.flipped { box-shadow: 0 0 0 3px rgba(245, 158, 11, .45); border-color: #f59e0b; }
+}
+.am-bits-sm .am-bit { width: 38px; height: 40px; }
+
+.am-flipfreq { margin-top: 14px; }
+.am-freq-row { display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: center; margin-bottom: 4px; }
+.am-freq-bit { font-size: .72rem; color: #94a3b8; font-weight: 700; }
+.am-freq-track { height: 13px; border-radius: 99px; background: #0f172a; border: 1px solid #1e293b; overflow: hidden; }
+.am-freq-bar { height: 100%; background: linear-gradient(90deg, #0d9488, #2dd4bf); min-width: 1px; transition: width .2s; }
+.am-freq-cnt { font-size: .68rem; color: #64748b; font-weight: 700; white-space: nowrap; }
+
+/* =========================================================================
+ * L4 — POTENTIAL METHOD
+ * ====================================================================== */
+.am-phi {
+  font-size: .82rem; color: #5eead4; font-weight: 800;
+  background: rgba(20, 184, 166, .12); border: 1px solid rgba(20, 184, 166, .3);
+  padding: 5px 11px; border-radius: 99px;
+}
+.am-tablewrap { overflow-x: auto; border: 1px solid #1e293b; border-radius: 10px; }
+.am-table {
+  width: 100%; border-collapse: collapse; font-size: .8rem;
+  th, td { padding: 7px 9px; text-align: center; border-bottom: 1px solid #1e293b; white-space: nowrap; }
+  th { background: #0d1b2e; font-size: .72rem; font-weight: 800; color: #5eead4; }
+  td { color: #cbd5e1; }
+  tr:last-child td { border-bottom: none; }
+  .am-mono { font-family: 'Fira Code', monospace; color: #e2e8f0; }
+  .am-amort { font-weight: 800; color: #6ee7b7; }
+  .neg { color: #f87171; }
+  .am-table-empty { color: #64748b; font-style: italic; }
+}
+.am-checklist {
+  margin: 0; padding-left: 18px;
+  display: flex; flex-direction: column; gap: 5px;
+  li { font-size: .77rem; color: #94a3b8; line-height: 1.45; }
+}

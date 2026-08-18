@@ -1,0 +1,326 @@
+<section class="hl-card" *ngIf="artifactId">
+
+  <!-- ═══════════════════════════ L1 — DIRECT-ADDRESS TABLE LAB ═══════════ -->
+  <ng-container *ngIf="artifactId === 'hash-direct-address'">
+    <header class="hl-head">
+      <span class="hl-kicker">Direct Addressing</span>
+      <h3>Direct-Address Table Lab</h3>
+      <p>When keys are small integers, the key <em>is</em> the index. Every operation is one array access — and the space cost is the catch.</p>
+    </header>
+
+    <div class="hl-controls">
+      <label class="hl-field"><span>Key</span>
+        <input type="number" min="0" [max]="daU - 1" [(ngModel)]="daKey" /></label>
+      <button type="button" class="hl-btn primary" (click)="daInsert()">Insert</button>
+      <button type="button" class="hl-btn" (click)="daSearch()">Search</button>
+      <button type="button" class="hl-btn" (click)="daDelete()">Delete</button>
+      <button type="button" class="hl-btn ghost" (click)="daReset()">Reset</button>
+    </div>
+
+    <div class="hl-split">
+      <div class="hl-main">
+        <span class="hl-label">Direct-address table T[0..{{ daU - 1 }}]</span>
+        <div class="da-table">
+          <div *ngFor="let cell of daTable; let idx = index" class="da-slot"
+               [class.filled]="cell !== null"
+               [class.active]="daActiveSlot === idx">
+            <span class="da-idx">{{ idx }}</span>
+            <span class="da-val">{{ cell === null ? 'NIL' : cell }}</span>
+          </div>
+        </div>
+        <p class="hl-note" [attr.data-tone]="daMessageTone">{{ daMessage }}</p>
+      </div>
+
+      <aside class="hl-side">
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">Operations — all Θ(1)</h4>
+          <div class="hl-code">
+            <div class="hl-cline" *ngFor="let ln of daPseudocode; let li = index"
+                 [class.active]="daActiveLine === li"
+                 [class.blank]="ln === ''">
+              <code>{{ ln || ' ' }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="hl-panel" data-tone="gold">
+          <h4 class="hl-panel-title">The space problem</h4>
+          <p class="hl-hint">A direct-address table needs one slot for <em>every possible key</em>, not every stored key.</p>
+          <div class="da-scales">
+            <button type="button" *ngFor="let s of daScales; let si = index" class="da-scale"
+                    [class.active]="daScaleIndex === si" (click)="daScaleIndex = si">{{ s.label }}</button>
+          </div>
+          <div class="da-waste">
+            <div class="da-waste-bar"><span [style.width.%]="100 - daWastePct"></span></div>
+            <p class="hl-hint"><strong>{{ daUniverseLabel }} slots</strong> for {{ daCount }} stored key(s) —
+              {{ daWastePct | number:'1.0-1' }}% of the table is wasted. {{ daScale.note }}</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L2 — CHAINING LAB ═══════════════════════ -->
+  <ng-container *ngIf="artifactId === 'hash-chaining'">
+    <header class="hl-head">
+      <span class="hl-kicker">Collision Resolution</span>
+      <h3>Hashing with Chaining Lab</h3>
+      <p>A hash function maps keys into m buckets; collisions live together in a per-bucket list. Watch the load factor drive the search cost.</p>
+    </header>
+
+    <div class="hl-tabs">
+      <span class="hl-label">Buckets m</span>
+      <button type="button" *ngFor="let m of chainMOptions" class="hl-tab"
+              [class.active]="chainM === m" (click)="setChainM(m)">{{ m }}</button>
+    </div>
+    <div class="hl-controls">
+      <label class="hl-field"><span>Key</span>
+        <input type="number" min="0" max="999" [(ngModel)]="chainKey" /></label>
+      <button type="button" class="hl-btn primary" (click)="chainInsert()">Insert</button>
+      <button type="button" class="hl-btn" (click)="chainSearch()">Search</button>
+      <button type="button" class="hl-btn ghost" (click)="chainReset()">Reset</button>
+    </div>
+
+    <div class="hl-split">
+      <div class="hl-main">
+        <div class="chain-table">
+          <div *ngFor="let bucket of chainBuckets; let b = index" class="chain-row"
+               [class.active]="chainBucketActive(b)">
+            <span class="chain-bucket">{{ b }}</span>
+            <div class="chain-list">
+              <span class="chain-empty" *ngIf="bucket.length === 0">empty</span>
+              <ng-container *ngFor="let key of bucket; let ni = index">
+                <span class="chain-node" [class.active]="chainNodeActive(b, ni)">{{ key }}</span>
+                <span class="chain-arrow" *ngIf="ni < bucket.length - 1">→</span>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+        <p class="hl-note" *ngIf="chainFrame">{{ chainFrame.note }}</p>
+        <p class="hl-note" data-tone="info" *ngIf="!chainFrame">Insert or search a key to trace the bucket list step by step.</p>
+
+        <div class="hl-controls" *ngIf="chainFrames.length">
+          <button type="button" class="hl-btn" (click)="chainPrev()" [disabled]="chainStep === 0">‹ Prev</button>
+          <button type="button" class="hl-btn primary" (click)="chainNext()" [disabled]="chainDone">Step ›</button>
+          <span class="hl-step-count">{{ chainStep + 1 }} / {{ chainFrames.length }}</span>
+        </div>
+      </div>
+
+      <aside class="hl-side">
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">CHAINED-HASH operations</h4>
+          <div class="hl-code">
+            <div class="hl-cline" *ngFor="let ln of chainPseudocode; let li = index"
+                 [class.active]="chainActiveLine === li"
+                 [class.blank]="ln === ''">
+              <code>{{ ln || ' ' }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">Load analysis</h4>
+          <div class="hl-stats">
+            <div class="hl-stat"><span>Stored n</span><strong>{{ chainN }}</strong></div>
+            <div class="hl-stat"><span>Buckets m</span><strong>{{ chainM }}</strong></div>
+            <div class="hl-stat"><span>Load factor α = n/m</span><strong>{{ chainAlpha }}</strong></div>
+            <div class="hl-stat"><span>Longest chain</span><strong>{{ chainLongest }}</strong></div>
+          </div>
+          <p class="hl-hint">Under simple uniform hashing the expected chain length is exactly α, so expected search is <strong>Θ(1 + α)</strong>. Worst case is Θ(n) when every key collides.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L3 — HASH FUNCTION EXPLORER ═════════════ -->
+  <ng-container *ngIf="artifactId === 'hash-function-explorer'">
+    <header class="hl-head">
+      <span class="hl-kicker">Hash Functions</span>
+      <h3>Hash Function Explorer</h3>
+      <p>A good hash function spreads keys evenly. A bad one — or a bad table size — piles them into a few slots.</p>
+    </header>
+
+    <div class="hl-tabs">
+      <span class="hl-label">Key set</span>
+      <button type="button" *ngFor="let s of hfeKeySets" class="hl-tab"
+              [class.active]="hfeKeySetId === s.id" (click)="hfeKeySetId = s.id">{{ s.label }}</button>
+    </div>
+    <div class="hl-tabs">
+      <span class="hl-label">Method</span>
+      <button type="button" class="hl-tab" [class.active]="hfeMethod === 'division'" (click)="hfeMethod = 'division'">Division</button>
+      <button type="button" class="hl-tab" [class.active]="hfeMethod === 'multiplication'" (click)="hfeMethod = 'multiplication'">Multiplication</button>
+    </div>
+    <div class="hl-tabs">
+      <span class="hl-label">Table size m</span>
+      <button type="button" *ngFor="let m of hfeMOptions" class="hl-tab"
+              [class.active]="hfeM === m" (click)="hfeM = m">
+        {{ m }}<small *ngIf="hfeIsPow2(m)"> = 2^{{ m === 8 ? 3 : 4 }}</small><small *ngIf="!hfeIsPow2(m)"> prime</small>
+      </button>
+    </div>
+
+    <div class="hl-split">
+      <div class="hl-main">
+        <code class="hfe-formula">{{ hfeFormulaLine }}</code>
+        <div class="hfe-chart">
+          <div *ngFor="let bucket of hfeBuckets; let b = index" class="hfe-col">
+            <div class="hfe-bars">
+              <span class="hfe-key" *ngFor="let k of bucket"
+                    [style.height.px]="22">{{ k }}</span>
+            </div>
+            <span class="hfe-slot" [class.hot]="bucket.length >= 3">{{ b }}</span>
+          </div>
+        </div>
+        <p class="hl-hint">{{ hfeKeySetNote }}</p>
+      </div>
+
+      <aside class="hl-side">
+        <div class="hl-panel" [attr.data-tone]="hfeQuality.tone === 'ok' ? 'green' : hfeQuality.tone === 'bad' ? 'red' : 'gold'">
+          <h4 class="hl-panel-title">Spread quality</h4>
+          <p class="hfe-quality-tag">{{ hfeQuality.tag }}</p>
+          <p class="hl-hint">{{ hfeQuality.text }}</p>
+        </div>
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">Distribution</h4>
+          <div class="hl-stats">
+            <div class="hl-stat"><span>Keys</span><strong>{{ hfeKeys.length }}</strong></div>
+            <div class="hl-stat"><span>Slots m</span><strong>{{ hfeM }}</strong></div>
+            <div class="hl-stat"><span>Tallest slot</span><strong>{{ hfeMaxBucket }}</strong></div>
+            <div class="hl-stat"><span>Empty slots</span><strong>{{ hfeEmptyBuckets }}</strong></div>
+          </div>
+          <p class="hl-hint">Division with m = 2ᵖ keeps only the lowest p bits of the key, so any keys sharing those bits collide. CLRS advises a prime m, not close to a power of 2.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════════ L4 — UNIVERSAL HASHING LAB ══════════════ -->
+  <ng-container *ngIf="artifactId === 'hash-universal'">
+    <header class="hl-head">
+      <span class="hl-kicker">Universal Hashing</span>
+      <h3>Universal Hashing Lab</h3>
+      <p>No fixed hash function is safe against every input. Universal hashing randomizes the <em>function</em> — so for any fixed keys, collisions are rare in expectation.</p>
+    </header>
+
+    <div class="hl-controls">
+      <button type="button" class="hl-btn primary" (click)="uniRoll()">🎲 Roll a random h from H</button>
+      <button type="button" class="hl-btn ghost" (click)="uniReset()">Reset</button>
+    </div>
+
+    <div class="hl-split">
+      <div class="hl-main">
+        <code class="hfe-formula">h(k) = ((a·k + b) mod {{ uniP }}) mod {{ uniM }} &nbsp;·&nbsp; a = {{ uniA }}, b = {{ uniB }}</code>
+        <div class="uni-keys">
+          <span class="hl-label">Fixed adversarial keys:</span>
+          <span class="uni-key" *ngFor="let k of uniKeys">{{ k }}</span>
+        </div>
+        <div class="hfe-chart">
+          <div *ngFor="let bucket of uniBuckets; let b = index" class="hfe-col">
+            <div class="hfe-bars">
+              <span class="hfe-key uni" *ngFor="let k of bucket">{{ k }}</span>
+            </div>
+            <span class="hfe-slot" [class.hot]="bucket.length >= 3">{{ b }}</span>
+          </div>
+        </div>
+        <p class="hl-note" [attr.data-tone]="uniCollisions === 0 ? 'ok' : 'info'">
+          This function h causes <strong>{{ uniCollisions }}</strong> colliding pair(s) on these keys.
+          The keys never change — only the function does.
+        </p>
+      </div>
+
+      <aside class="hl-side">
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">Averaging over random h</h4>
+          <div class="hl-stats">
+            <div class="hl-stat"><span>Rolls</span><strong>{{ uniRolls }}</strong></div>
+            <div class="hl-stat"><span>This roll</span><strong>{{ uniCollisions }}</strong></div>
+            <div class="hl-stat"><span>Average so far</span><strong>{{ uniAvgCollisions }}</strong></div>
+            <div class="hl-stat"><span>Bound C(n,2)/m</span><strong>{{ uniExpectedBound }}</strong></div>
+          </div>
+          <p class="hl-hint">Roll many times: the average collision count settles near the bound. Each of the {{ uniPairs }} key pairs collides with probability ≤ 1/m.</p>
+        </div>
+        <div class="hl-panel" data-tone="blue">
+          <h4 class="hl-panel-title">What is random?</h4>
+          <p class="hl-hint">The <strong>adversary picks the keys first</strong>. Only afterwards does the table choose h uniformly from the family H. Because Pr[h(x) = h(y)] ≤ 1/m for every fixed pair, no input can be engineered to be slow — the guarantee is an expectation over <em>h</em>, not over the input.</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- ═══════════════════════ L5/L6/L7 — OPEN ADDRESSING LAB ══════════════ -->
+  <ng-container *ngIf="artifactId === 'hash-linear-probing' || artifactId === 'hash-quadratic-probing' || artifactId === 'hash-double-hashing'">
+    <header class="hl-head">
+      <span class="hl-kicker">Open Addressing</span>
+      <h3>Open Addressing Probe Lab</h3>
+      <p>No lists — every key lives in the table itself. On a collision the probe sequence h(k, i) walks to the next candidate slot.</p>
+    </header>
+
+    <div class="hl-tabs">
+      <span class="hl-label">Probe strategy</span>
+      <button type="button" class="hl-tab" [class.active]="oaStrategy === 'linear'" (click)="setOaStrategy('linear')">Linear</button>
+      <button type="button" class="hl-tab" [class.active]="oaStrategy === 'quadratic'" (click)="setOaStrategy('quadratic')">Quadratic</button>
+      <button type="button" class="hl-tab" [class.active]="oaStrategy === 'double'" (click)="setOaStrategy('double')">Double</button>
+    </div>
+    <code class="hfe-formula">{{ oaStrategyInfo[oaStrategy].probe }}<span *ngIf="oaStrategy !== 'double'"> &nbsp;·&nbsp; h′(k) = k mod {{ oaM }}</span><span *ngIf="oaStrategy === 'double'"> &nbsp;·&nbsp; h₁(k) = k mod {{ oaM }}, h₂(k) = 1 + (k mod {{ oaM - 1 }})</span></code>
+
+    <div class="hl-controls">
+      <label class="hl-field"><span>Key</span>
+        <input type="number" min="0" max="999" [(ngModel)]="oaKey" /></label>
+      <button type="button" class="hl-btn primary" (click)="oaInsert()">Insert</button>
+      <button type="button" class="hl-btn" (click)="oaSearch()">Search</button>
+      <button type="button" class="hl-btn" (click)="oaDelete()">Delete</button>
+      <button type="button" class="hl-btn ghost" (click)="oaReset()">Reset</button>
+    </div>
+
+    <div class="hl-split">
+      <div class="hl-main">
+        <div class="oa-table">
+          <div *ngFor="let slot of oaViewTable; let idx = index" class="oa-slot" [attr.data-state]="oaSlotClass(idx)">
+            <span class="oa-idx">{{ idx }}</span>
+            <span class="oa-val">{{ slot.deleted ? 'DEL' : (slot.key === null ? '·' : slot.key) }}</span>
+          </div>
+        </div>
+        <div class="oa-legend">
+          <span class="lg probe">probing</span>
+          <span class="lg hit">placed / found</span>
+          <span class="lg miss">NIL — stop</span>
+          <span class="lg full">occupied</span>
+          <span class="lg tomb">tombstone</span>
+        </div>
+        <p class="hl-note" *ngIf="oaFrame">{{ oaFrame.note }}</p>
+        <p class="hl-note" data-tone="info" *ngIf="!oaFrame">{{ oaMessage }}</p>
+
+        <div class="hl-controls" *ngIf="oaFrames.length">
+          <button type="button" class="hl-btn" (click)="oaPrev()" [disabled]="oaStep === 0">‹ Prev</button>
+          <button type="button" class="hl-btn primary" (click)="oaNext()" [disabled]="oaDone">Step ›</button>
+          <button type="button" class="hl-btn" (click)="oaRunEnd()" [disabled]="oaDone">Run to end</button>
+          <span class="hl-step-count">probe {{ oaStep + 1 }} / {{ oaFrames.length }}</span>
+        </div>
+      </div>
+
+      <aside class="hl-side">
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">{{ oaActiveCode === 'insert' ? 'HASH-INSERT(T, k)' : 'HASH-SEARCH(T, k)' }}</h4>
+          <div class="hl-code">
+            <div class="hl-cline" *ngFor="let ln of oaActivePseudocode(); let li = index"
+                 [class.active]="oaActiveLine === li"
+                 [class.blank]="ln === ''">
+              <code>{{ ln || ' ' }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="hl-panel">
+          <h4 class="hl-panel-title">Table state</h4>
+          <div class="hl-stats">
+            <div class="hl-stat"><span>Stored n</span><strong>{{ oaCount }}</strong></div>
+            <div class="hl-stat"><span>Slots m</span><strong>{{ oaM }}</strong></div>
+            <div class="hl-stat"><span>Load factor α</span><strong>{{ oaLoad }}</strong></div>
+            <div class="hl-stat"><span>Longest run</span><strong>{{ oaLongestRun }}</strong></div>
+          </div>
+        </div>
+        <div class="hl-panel" data-tone="gold">
+          <h4 class="hl-panel-title">{{ oaStrategyInfo[oaStrategy].label }}</h4>
+          <p class="hl-hint">{{ oaStrategyInfo[oaStrategy].clustering }}</p>
+        </div>
+      </aside>
+    </div>
+  </ng-container>
+
+</section>

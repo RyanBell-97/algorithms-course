@@ -1,0 +1,14 @@
+<ng-container *ngFor="let part of parts">
+  <ng-container [ngSwitch]="part.kind">
+    <span *ngSwitchCase="'text'">{{ part.value }}</span>
+    <span *ngSwitchCase="'math'" class="math-run">{{ part.value }}</span>
+    <span *ngSwitchCase="'fraction'" class="fraction-run">
+      <span *ngIf="part.sign" class="fraction-sign">{{ part.sign }}</span>
+      <span class="stacked-fraction">
+        <span class="fraction-num">{{ part.numerator }}</span>
+        <span class="fraction-bar"></span>
+        <span class="fraction-den">{{ part.denominator }}</span>
+      </span>
+    </span>
+  </ng-container>
+</ng-container>

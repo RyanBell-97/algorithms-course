@@ -1,0 +1,332 @@
+<ng-container [ngSwitch]="artifact">
+
+  <!-- L1: Iteration method -->
+  <section *ngSwitchCase="'iteration-unroller-lab'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Recurrence Lab</span>
+      <h3>Iteration method: unroll, collect, solve</h3>
+      <p>Step through each algebraic action. The highlighted rule tells you exactly why the expression changed.</p>
+    </header>
+
+    <div class="u2-tabs">
+      <button type="button" *ngFor="let p of iterationPresets; let i = index"
+              [class.is-active]="i === iterIdx"
+              (click)="iterSelect(i)">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="u2-grid">
+      <article class="u2-panel u2-main-panel">
+        <div class="u2-stage-top">
+          <strong>{{ iterFrame.title }}</strong>
+          <span>{{ iterStep + 1 }} / {{ iterPreset.steps.length }}</span>
+        </div>
+        <div class="u2-expression">{{ iterFrame.expression }}</div>
+        <p>{{ iterFrame.rule }}</p>
+        <div class="u2-result-strip">
+          <span>Series: <strong>{{ iterPreset.series }}</strong></span>
+          <span>Closed: <strong>{{ iterPreset.closed }}</strong></span>
+          <span>Answer: <strong>{{ iterPreset.theta }}</strong></span>
+        </div>
+      </article>
+
+      <aside class="u2-panel">
+        <h4>Source rules</h4>
+        <ol class="u2-rule-list">
+          <li *ngFor="let r of sourceRules" [class.is-active]="r.id === iterFrame.active">{{ r.text }}</li>
+        </ol>
+      </aside>
+    </div>
+
+    <div class="u2-callout">
+      <strong>Common pitfall:</strong> {{ iterPreset.trap }}
+    </div>
+
+    <div class="u2-actions">
+      <button type="button" (click)="iterPrev()" [disabled]="iterStep === 0">Previous</button>
+      <button type="button" class="primary" (click)="iterNext()" [disabled]="iterStep === iterPreset.steps.length - 1">Next step</button>
+      <button type="button" (click)="iterReset()">Reset</button>
+    </div>
+  </section>
+
+  <!-- L2: Recursion tree -->
+  <section *ngSwitchCase="'recursion-tree-builder'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Visualizer</span>
+      <h3>Recursion-tree builder</h3>
+      <p>Expand the call tree level by level. Watch whether the work is root-heavy, balanced, or leaf-heavy.</p>
+    </header>
+
+    <div class="u2-tabs">
+      <button type="button" *ngFor="let p of treePresets; let i = index"
+              [class.is-active]="i === treeIdx"
+              (click)="treeSelect(i)">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="u2-grid u2-grid-wide">
+      <article class="u2-panel">
+        <div class="u2-recurrence">{{ treePreset.recurrence }}</div>
+        <p>{{ treePreset.example }}</p>
+        <svg class="u2-tree-svg" viewBox="0 0 500 340" role="img" aria-label="Recursion tree">
+          <g *ngFor="let level of treeVisibleLevels">
+            <line *ngIf="level.level > 0" x1="250" [attr.y1]="treeNodeY(level) - 38"
+                  x2="250" [attr.y2]="treeNodeY(level) - 18" class="u2-tree-spine" />
+            <g *ngFor="let i of nodeSlots(level.displayNodes)"
+               [attr.transform]="'translate(' + treeNodeX(level, i) + ',' + treeNodeY(level) + ')'">
+              <circle class="u2-tree-node" [class.is-active]="level.level === treeLevel" [attr.r]="treeNodeR(level)" />
+              <text y="4">{{ level.level }}</text>
+            </g>
+            <text *ngIf="level.compressed" x="470" [attr.y]="treeNodeY(level) + 4" class="u2-tree-more">x{{ level.nodes }}</text>
+          </g>
+        </svg>
+      </article>
+
+      <aside class="u2-panel">
+        <h4>Per-level accounting</h4>
+        <div class="u2-table-wrap">
+          <table class="u2-table">
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Nodes</th>
+                <th>Size</th>
+                <th>Cost/Node</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let lv of treeLevels" [class.is-active]="lv.level === treeLevel">
+                <td>{{ lv.level }}</td>
+                <td>{{ lv.nodes }}</td>
+                <td>{{ lv.size }}</td>
+                <td>{{ lv.perNode }}</td>
+                <td>{{ lv.total }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="u2-result-card" [ngClass]="'pattern-' + treePattern">
+          <span>ratio a / b^k = {{ treeRatio | number:'1.0-3' }}</span>
+          <strong>{{ treeAnswer }}</strong>
+        </div>
+      </aside>
+    </div>
+
+    <div class="u2-actions">
+      <button type="button" (click)="treePrev()" [disabled]="treeLevel === 0">Previous level</button>
+      <button type="button" class="primary" (click)="treeNext()" [disabled]="treeLevel === 5">Expand level</button>
+      <button type="button" (click)="treeReset()">Reset</button>
+    </div>
+  </section>
+
+  <!-- L3: Substitution proof -->
+  <section *ngSwitchCase="'substitution-proof-lab'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Proof Lab</span>
+      <h3>Substitution method: guess, substitute, absorb</h3>
+      <p>The active proof phase is highlighted so you can see how the recurrence becomes an induction proof.</p>
+    </header>
+
+    <div class="u2-tabs">
+      <button type="button" *ngFor="let p of proofScenarios; let i = index"
+              [class.is-active]="i === proofIdx"
+              (click)="proofSelect(i)">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="u2-grid">
+      <article class="u2-panel u2-proof">
+        <div class="u2-recurrence">{{ proofScenario.recurrence }}</div>
+        <div class="u2-claim">{{ proofScenario.claim }}</div>
+        <div class="u2-proof-step">
+          <span>{{ proofFrame.phase }}</span>
+          <strong>{{ proofFrame.statement }}</strong>
+          <p>{{ proofFrame.note }}</p>
+        </div>
+        <div class="u2-result-strip">
+          <span>Conclusion: <strong>{{ proofScenario.answer }}</strong></span>
+        </div>
+      </article>
+
+      <aside class="u2-panel">
+        <h4>Proof pipeline</h4>
+        <ol class="u2-proof-flow">
+          <li *ngFor="let s of proofScenario.steps; let i = index"
+              [class.is-active]="i === proofStep"
+              [class.is-done]="i < proofStep">
+            <span>{{ s.phase }}</span>
+            <small>{{ s.active }}</small>
+          </li>
+        </ol>
+
+        <h4>Common mistakes</h4>
+        <div class="u2-mini-card" *ngFor="let m of proofScenario.mistakes">
+          <strong>{{ m.label }}</strong>
+          <p>{{ m.fix }}</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="u2-actions">
+      <button type="button" (click)="proofPrev()" [disabled]="proofStep === 0">Previous</button>
+      <button type="button" class="primary" (click)="proofNext()" [disabled]="proofStep === proofScenario.steps.length - 1">Next proof step</button>
+    </div>
+  </section>
+
+  <!-- L4: Variable transform -->
+  <section *ngSwitchCase="'variable-transform-lab'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Transform Lab</span>
+      <h3>Variable transformation: turn sqrt(n) into m/2</h3>
+      <p>Use m = lg n to convert awkward subproblem sizes into standard divide-and-conquer form.</p>
+    </header>
+
+    <div class="u2-tabs">
+      <button type="button" *ngFor="let p of transformScenarios; let i = index"
+              [class.is-active]="i === transformIdx"
+              (click)="transformSelect(i)">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="u2-grid">
+      <article class="u2-panel">
+        <div class="u2-transform-steps">
+          <div [class.is-active]="transformStep === 0"><span>1</span><strong>{{ transformScenario.original }}</strong></div>
+          <div [class.is-active]="transformStep === 1"><span>2</span><strong>{{ transformScenario.substitution }}</strong></div>
+          <div [class.is-active]="transformStep === 2"><span>3</span><strong>{{ transformScenario.transformed }}</strong></div>
+          <div [class.is-active]="transformStep === 3"><span>4</span><strong>{{ transformScenario.solved }}</strong></div>
+          <div [class.is-active]="transformStep === 4"><span>5</span><strong>{{ transformScenario.back }}</strong></div>
+        </div>
+      </article>
+
+      <aside class="u2-panel">
+        <h4>Translation table</h4>
+        <div class="u2-table-wrap">
+          <table class="u2-table">
+            <thead>
+              <tr><th>Item</th><th>Before</th><th>After m = lg n</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of transformScenario.rows">
+                <td>{{ row.item }}</td>
+                <td>{{ row.before }}</td>
+                <td>{{ row.after }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="u2-callout compact">
+          The key identity is sqrt(n) = sqrt(2^m) = 2^(m/2), so T(sqrt(n)) becomes S(m/2).
+        </div>
+      </aside>
+    </div>
+
+    <div class="u2-actions">
+      <button type="button" (click)="transformPrev()" [disabled]="transformStep === 0">Previous</button>
+      <button type="button" class="primary" (click)="transformNext()" [disabled]="transformStep === 4">Next transform</button>
+    </div>
+  </section>
+
+  <!-- L5: Master theorem -->
+  <section *ngSwitchCase="'master-theorem-calc'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Classifier</span>
+      <h3>Master theorem: compare f(n) to n^log_b(a)</h3>
+      <p>Enter T(n) = aT(n/b) + Theta(n^k lg^p n). The classifier shows the critical exponent and the case.</p>
+    </header>
+
+    <div class="u2-input-grid">
+      <label>
+        <span>a</span>
+        <input type="number" min="1" max="20" step="1" [(ngModel)]="mtA" (ngModelChange)="mtChecked = false">
+      </label>
+      <label>
+        <span>b</span>
+        <input type="number" min="2" max="20" step="1" [(ngModel)]="mtB" (ngModelChange)="mtChecked = false">
+      </label>
+      <label>
+        <span>k in n^k</span>
+        <input type="number" min="0" max="8" step="0.5" [(ngModel)]="mtK" (ngModelChange)="mtChecked = false">
+      </label>
+      <label>
+        <span>p in lg^p n</span>
+        <input type="number" min="0" max="4" step="1" [(ngModel)]="mtLogPower" (ngModelChange)="mtChecked = false">
+      </label>
+    </div>
+
+    <div class="u2-grid">
+      <article class="u2-panel">
+        <div class="u2-recurrence">T(n) = {{ mtA }}T(n/{{ mtB }}) + Theta({{ mtFLabel }})</div>
+        <div class="u2-comparison">
+          <span>critical exponent</span>
+          <strong>log_{{ mtB }} {{ mtA }} = {{ mtCritical | number:'1.0-3' }}</strong>
+          <span>vs k = {{ mtK }}</span>
+        </div>
+        <div class="u2-actions inline">
+          <button type="button" class="primary" (click)="mtClassify()">Classify</button>
+          <button type="button" (click)="mtReset()">Reset</button>
+        </div>
+      </article>
+
+      <aside class="u2-panel" *ngIf="mtChecked; else mtIdle">
+        <div class="u2-result-card" [ngClass]="'pattern-' + mtResult.tone">
+          <span>{{ mtResult.caseName }}</span>
+          <strong>{{ mtResult.answer }}</strong>
+          <p>{{ mtResult.explanation }}</p>
+        </div>
+        <div class="u2-callout compact">{{ mtResult.regularity }}</div>
+      </aside>
+      <ng-template #mtIdle>
+        <aside class="u2-panel">
+          <h4>Case rules</h4>
+          <ol class="u2-rule-list">
+            <li>Case 1: f(n) is polynomially smaller, leaves dominate.</li>
+            <li>Case 2: f(n) matches, multiply by one more log.</li>
+            <li>Case 3: f(n) is polynomially larger, root dominates if regularity holds.</li>
+          </ol>
+        </aside>
+      </ng-template>
+    </div>
+  </section>
+
+  <!-- L6: Review / method selection -->
+  <section *ngSwitchCase="'recurrence-method-review'" class="u2-card">
+    <header class="u2-head">
+      <span class="u2-kicker">Review Drill</span>
+      <h3>Choose the right recurrence method</h3>
+      <p>Before solving, classify the recurrence. Choosing the right method is often half the work.</p>
+    </header>
+
+    <div class="u2-review-list">
+      <article class="u2-review-item" *ngFor="let p of reviewProblems"
+               [class.is-correct]="reviewState(p) === 'correct'"
+               [class.is-wrong]="reviewState(p) === 'wrong'">
+        <div class="u2-review-top">
+          <strong>{{ p.recurrence }}</strong>
+          <span *ngIf="reviewChecked">{{ p.answer }}</span>
+        </div>
+        <div class="u2-method-row">
+          <button type="button" *ngFor="let m of methodOrder"
+                  [class.is-picked]="reviewAnswers[p.id] === m"
+                  [disabled]="reviewChecked"
+                  (click)="reviewPick(p.id, m)">
+            {{ methodNames[m] }}
+          </button>
+        </div>
+        <p *ngIf="reviewChecked">{{ p.why }}</p>
+      </article>
+    </div>
+
+    <div class="u2-actions">
+      <button type="button" class="primary" (click)="reviewCheck()" [disabled]="reviewChecked">Check answers</button>
+      <button type="button" (click)="reviewReset()">Reset</button>
+      <span class="u2-score" *ngIf="reviewChecked">{{ reviewCorrect }} / {{ reviewProblems.length }} correct</span>
+    </div>
+  </section>
+
+</ng-container>

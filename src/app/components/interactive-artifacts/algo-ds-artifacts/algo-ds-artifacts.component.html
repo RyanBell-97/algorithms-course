@@ -1,0 +1,406 @@
+<ng-container *ngIf="lazyArtifact as lazy; else legacyArtifacts">
+  <ng-container *ngComponentOutlet="lazy.component; inputs: lazy.inputs"></ng-container>
+</ng-container>
+
+<ng-template #legacyArtifacts>
+<ng-container [ngSwitch]="artifact">
+
+
+  <!-- ────────────────────────────────── L4: Loop Invariant Builder -->
+  <section *ngSwitchCase="'legacy-merge-sort-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Merge Sort: split, then merge</h3>
+      <p>Step through the same array used in the lesson. Notice that sorting only becomes real when the sorted runs are merged.</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ mergeStage.label }}</strong>
+        <span>{{ mergeStepIndex + 1 }} / {{ mergeStages.length }}</span>
+      </div>
+      <p>{{ mergeStage.note }}</p>
+    </div>
+
+    <div class="u3-array-board">
+      <div class="u3-array-row" *ngFor="let row of mergeStage.rows || []">
+        <span class="u3-row-label">{{ row.label }}</span>
+        <div class="u3-cells">
+          <span
+            class="u3-cell"
+            [class.u3-cell-input]="row.role === 'input'"
+            [class.u3-cell-split]="row.role === 'split'"
+            [class.u3-cell-merge]="row.role === 'merge'"
+            [class.u3-cell-sorted]="row.role === 'sorted'"
+            [class.u3-cell-pivot]="row.role === 'pivot'"
+            [class.u3-cell-left]="row.role === 'left'"
+            [class.u3-cell-right]="row.role === 'right'"
+            [class.u3-cell-unknown]="row.role === 'unknown'"
+            [class.u3-cell-count]="row.role === 'count'"
+            [class.u3-cell-output]="row.role === 'output'"
+            [class.u3-cell-group]="row.role === 'group'"
+            [class.u3-cell-median]="row.role === 'median'"
+            [class.u3-cell-discard]="row.role === 'discard'"
+            [class.u3-cell-target]="row.role === 'target'"
+            [class.u3-cell-root]="row.role === 'root'"
+            [class.u3-cell-path]="row.role === 'path'"
+            [class.u3-cell-found]="row.role === 'found'"
+            [class.u3-cell-candidate]="row.role === 'candidate'"
+            *ngFor="let value of row.values">
+            {{ value }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Rule:</span>
+      compare the two front elements, copy the smaller one, advance that pointer.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="mergePrev()" [disabled]="mergeStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="mergeNext()" [disabled]="mergeStepIndex === mergeStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="mergeReset()">Reset</button>
+    </div>
+  </section>
+
+  <section *ngSwitchCase="'legacy-heapify-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>BUILD-MAX-HEAP trace</h3>
+      <p>Move bottom-up through the internal nodes. The focused node is the root of the subtree being repaired.</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ heapifyStage.label }}</strong>
+        <span>{{ heapifyStepIndex + 1 }} / {{ heapifyStages.length }}</span>
+      </div>
+      <p>{{ heapifyStage.note }}</p>
+    </div>
+
+    <div class="u3-heap-layout">
+      <div class="u3-array-strip">
+        <span
+          class="u3-indexed-cell"
+          [class.u3-focus]="isU3Focus(heapifyStage, hi)"
+          *ngFor="let value of heapifyStage.arr || []; let hi = index">
+          <small>{{ hi + 1 }}</small>
+          <strong>{{ value }}</strong>
+        </span>
+      </div>
+
+      <div class="u3-heap-tree">
+        <span
+          *ngFor="let value of heapifyStage.arr || []; let hi = index"
+          [class]="u3TreeClass(hi)"
+          [class.u3-focus]="isU3Focus(heapifyStage, hi)">
+          {{ value }}
+        </span>
+      </div>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Invariant:</span>
+      before MAX-HEAPIFY(A, i), the left and right subtrees of i are already max-heaps.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="heapifyPrev()" [disabled]="heapifyStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="heapifyNext()" [disabled]="heapifyStepIndex === heapifyStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="heapifyReset()">Reset</button>
+    </div>
+  </section>
+
+  <section *ngSwitchCase="'legacy-heapsort-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Heapsort extraction loop</h3>
+      <p>The blue prefix is still a heap. The amber suffix is already in final sorted position.</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ heapSortStage.label }}</strong>
+        <span>{{ heapSortStepIndex + 1 }} / {{ heapSortStages.length }}</span>
+      </div>
+      <p>{{ heapSortStage.note }}</p>
+    </div>
+
+    <div class="u3-array-strip u3-heapsort-strip">
+      <span
+        class="u3-indexed-cell"
+        [class.u3-focus]="isU3Focus(heapSortStage, hi)"
+        [class.u3-outside]="isU3OutsideHeap(heapSortStage, hi)"
+        [class.u3-sorted-suffix]="isU3Sorted(heapSortStage, hi)"
+        *ngFor="let value of heapSortStage.arr || []; let hi = index">
+        <small>{{ hi + 1 }}</small>
+        <strong>{{ value }}</strong>
+      </span>
+    </div>
+
+    <div class="u3-heap-tree">
+      <span
+        *ngFor="let value of heapSortStage.arr || []; let hi = index"
+        [class]="u3TreeClass(hi)"
+        [class.u3-focus]="isU3Focus(heapSortStage, hi)"
+        [class.u3-outside]="isU3OutsideHeap(heapSortStage, hi)">
+        {{ value }}
+      </span>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Loop invariant:</span>
+      heap prefix contains the remaining unsorted keys; sorted suffix contains the largest keys in final order.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="heapSortPrev()" [disabled]="heapSortStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="heapSortNext()" [disabled]="heapSortStepIndex === heapSortStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="heapSortReset()">Reset</button>
+    </div>
+  </section>
+
+  <section *ngSwitchCase="'legacy-quicksort-partition-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Quicksort partition</h3>
+      <p>Step through Lomuto partition on [2, 8, 7, 1, 3, 5, 6, 4].</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ quickSortStage.label }}</strong>
+        <span>{{ quickSortStepIndex + 1 }} / {{ quickSortStages.length }}</span>
+      </div>
+      <p>{{ quickSortStage.note }}</p>
+    </div>
+
+    <div class="u3-array-board">
+      <div class="u3-array-row" *ngFor="let row of quickSortStage.rows || []">
+        <span class="u3-row-label">{{ row.label }}</span>
+        <div class="u3-cells">
+          <span
+            class="u3-cell"
+            [class.u3-cell-split]="row.role === 'split'"
+            [class.u3-cell-pivot]="row.role === 'pivot'"
+            [class.u3-cell-left]="row.role === 'left'"
+            [class.u3-cell-right]="row.role === 'right'"
+            [class.u3-cell-unknown]="row.role === 'unknown'"
+            *ngFor="let value of row.values">
+            {{ value }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Partition invariant:</span>
+      A[p..i] <= x, A[i+1..j-1] > x, and A[j..r-1] has not been scanned yet.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="quickSortPrev()" [disabled]="quickSortStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="quickSortNext()" [disabled]="quickSortStepIndex === quickSortStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="quickSortReset()">Reset</button>
+    </div>
+  </section>
+
+  <section *ngSwitchCase="'legacy-counting-radix-sort-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Counting sort and radix sort</h3>
+      <p>Trace counts, prefix sums, stable scatter, and the stable digit passes used by radix sort.</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ countingSortStage.label }}</strong>
+        <span>{{ countingSortStepIndex + 1 }} / {{ countingSortStages.length }}</span>
+      </div>
+      <p>{{ countingSortStage.note }}</p>
+    </div>
+
+    <div class="u3-array-board">
+      <div class="u3-array-row" *ngFor="let row of countingSortStage.rows || []">
+        <span class="u3-row-label">{{ row.label }}</span>
+        <div class="u3-cells">
+          <span
+            class="u3-cell"
+            [class.u3-cell-input]="row.role === 'input'"
+            [class.u3-cell-unknown]="row.role === 'unknown'"
+            [class.u3-cell-count]="row.role === 'count'"
+            [class.u3-cell-output]="row.role === 'output'"
+            [class.u3-cell-merge]="row.role === 'merge'"
+            [class.u3-cell-sorted]="row.role === 'sorted'"
+            *ngFor="let value of row.values">
+            {{ value }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Stability rule:</span>
+      scan the input from right to left during scatter so equal keys keep their original order.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="countingSortPrev()" [disabled]="countingSortStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="countingSortNext()" [disabled]="countingSortStepIndex === countingSortStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="countingSortReset()">Reset</button>
+    </div>
+  </section>
+
+  <section *ngSwitchCase="'legacy-median-of-medians-viz'" class="artifact-card u3-artifact">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Median-of-medians selection</h3>
+      <p>See how groups of five produce a pivot that is good enough for worst-case linear time.</p>
+    </div>
+
+    <div class="u3-stage-card">
+      <div class="u3-stage-top">
+        <strong>{{ medianSelectStage.label }}</strong>
+        <span>{{ medianSelectStepIndex + 1 }} / {{ medianSelectStages.length }}</span>
+      </div>
+      <p>{{ medianSelectStage.note }}</p>
+    </div>
+
+    <div class="u3-array-board">
+      <div class="u3-array-row" *ngFor="let row of medianSelectStage.rows || []">
+        <span class="u3-row-label">{{ row.label }}</span>
+        <div class="u3-cells">
+          <span
+            class="u3-cell"
+            [class.u3-cell-group]="row.role === 'group'"
+            [class.u3-cell-median]="row.role === 'median'"
+            [class.u3-cell-pivot]="row.role === 'pivot'"
+            [class.u3-cell-left]="row.role === 'left'"
+            [class.u3-cell-right]="row.role === 'right'"
+            [class.u3-cell-discard]="row.role === 'discard'"
+            [class.u3-cell-target]="row.role === 'target'"
+            *ngFor="let value of row.values">
+            {{ value }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="u3-rule-strip">
+      <span>Guarantee:</span>
+      after partitioning around the median of medians, at most about 7n/10 elements can remain on the recursive side.
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-step" (click)="medianSelectPrev()" [disabled]="medianSelectStepIndex === 0">Previous</button>
+      <button type="button" class="btn-run" (click)="medianSelectNext()" [disabled]="medianSelectStepIndex === medianSelectStages.length - 1">Next</button>
+      <button type="button" class="btn-reset" (click)="medianSelectReset()">Reset</button>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────── U2-L2: Recursion-Tree Builder ── -->
+  <section *ngSwitchCase="'legacy-recursion-tree-builder'" class="artifact-card">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Visualizer</span>
+      <h3>Recursion-tree builder</h3>
+      <p>Pick a recurrence T(n) = aT(n/b) + f(n). The table below shows the first few levels of the recursion tree — nodes per level, per-node cost, and total level cost. Study the pattern to predict the overall Θ.</p>
+    </div>
+
+    <div class="rt-presets">
+      <button *ngFor="let p of rtPresets; let i = index"
+              type="button"
+              class="rt-preset-btn"
+              [class.rt-active]="i === rtChoice"
+              (click)="rtSelectPreset(i)">
+        {{ p.label }}
+      </button>
+    </div>
+
+    <div class="rt-recurrence">
+      <strong>Recurrence:</strong>
+      T(n) = {{ rtPreset.a }}·T(n/{{ rtPreset.b }}) + {{ rtPreset.fLabel === '1' ? 'Θ(1)' : 'Θ(' + rtPreset.fLabel + ')' }}
+    </div>
+
+    <table class="rt-table">
+      <thead>
+        <tr>
+          <th>Level</th>
+          <th>Nodes</th>
+          <th>Subproblem size</th>
+          <th>Work per node</th>
+          <th>Level cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let lv of rtLevels">
+          <td>{{ lv.level }}</td>
+          <td>{{ lv.nodes }}</td>
+          <td>{{ lv.nodeSize }}</td>
+          <td>{{ lv.perNode }}</td>
+          <td>{{ lv.levelCost }}</td>
+        </tr>
+        <tr class="rt-dots">
+          <td colspan="5">⋮ … continues for log<sub>{{ rtPreset.b }}</sub> n levels</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-run" (click)="rtShowAnswer = !rtShowAnswer">
+        {{ rtShowAnswer ? 'Hide' : 'Show' }} answer
+      </button>
+    </div>
+
+    <div *ngIf="rtShowAnswer" class="rt-answer fb-correct">
+      {{ rtPreset.answer }}
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────── U2-L5: Master Theorem Calc ─── -->
+  <section *ngSwitchCase="'legacy-master-theorem-calc'" class="artifact-card">
+    <div class="artifact-head">
+      <span class="artifact-kicker">Calculator</span>
+      <h3>Master-theorem classifier</h3>
+      <p>Enter the parameters of T(n) = aT(n/b) + Θ(n<sup>k</sup>). The calculator will compute log<sub>b</sub> a, compare it with k, and tell you which case applies.</p>
+    </div>
+
+    <div class="mt-inputs">
+      <label class="mt-field">
+        <span>a =</span>
+        <input type="number" [(ngModel)]="mtA" min="1" max="20" step="1" (ngModelChange)="mtChecked = false"/>
+      </label>
+      <label class="mt-field">
+        <span>b =</span>
+        <input type="number" [(ngModel)]="mtB" min="2" max="20" step="1" (ngModelChange)="mtChecked = false"/>
+      </label>
+      <label class="mt-field">
+        <span>k = exponent in f(n) = n<sup>k</sup></span>
+        <input type="number" [(ngModel)]="mtFExp" min="0" max="10" step="0.5" (ngModelChange)="mtChecked = false"/>
+      </label>
+    </div>
+
+    <div class="mt-computed">
+      <span>log<sub>{{ mtB }}</sub> {{ mtA }} ≈ <strong>{{ mtLogBA.toFixed(3) }}</strong></span>
+      <span class="mt-vs">vs</span>
+      <span>k = <strong>{{ mtFExp }}</strong></span>
+    </div>
+
+    <div class="artifact-actions">
+      <button type="button" class="btn-run" (click)="mtCheck()" [disabled]="mtChecked">Classify</button>
+      <button type="button" class="btn-step" (click)="mtReset()">Reset</button>
+    </div>
+
+    <div *ngIf="mtChecked" class="mt-result"
+         [class.mt-case1]="mtResult.caseNum === 1"
+         [class.mt-case2]="mtResult.caseNum === 2"
+         [class.mt-case3]="mtResult.caseNum === 3">
+      <div class="mt-case-label">{{ mtResult.label }}</div>
+      <div class="mt-case-answer">T(n) = {{ mtResult.answer }}</div>
+      <div class="mt-case-explain">{{ mtResult.explain }}</div>
+    </div>
+  </section>
+
+</ng-container>
+</ng-template>

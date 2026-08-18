@@ -1,0 +1,186 @@
+<section class="tv-card" [class.tv-rb]="mode === 'rb'">
+  <header class="tv-head">
+    <span class="tv-kicker">{{ mode === 'rb' ? 'Red-black tree' : 'Binary search tree' }} visualizer</span>
+    <h3>{{ mode === 'rb' ? 'Red-black tree: rotations, RB-INSERT, RB-DELETE' : 'Binary search tree: queries and mutations' }}</h3>
+    <p>
+      Pick an operation and run it step by step. Each step highlights the exact CLRS
+      pseudocode line that caused the change in the tree.
+    </p>
+  </header>
+
+  <!-- ── toolbar ───────────────────────────────────────────────────────── -->
+  <div class="tv-toolbar">
+    <div class="tv-op-row">
+      <label class="tv-field">
+        <span>Operation</span>
+        <select [(ngModel)]="selectedOp">
+          <option *ngFor="let o of ops" [value]="o.id">{{ o.label }}</option>
+        </select>
+      </label>
+      <label class="tv-field tv-field--key" *ngIf="needsKey">
+        <span>Key</span>
+        <input type="number" [(ngModel)]="keyInput" />
+      </label>
+      <button type="button" class="tv-btn tv-btn--run" (click)="runSelected()">Run operation</button>
+      <button type="button" class="tv-btn tv-btn--ghost" (click)="clearOp()" [disabled]="!hasSteps">Clear</button>
+    </div>
+
+    <div class="tv-preset-row">
+      <span class="tv-preset-label">Presets</span>
+      <button type="button" class="tv-chip" *ngFor="let p of presets" (click)="loadPreset(p)">{{ p.label }}</button>
+      <button type="button" class="tv-chip tv-chip--reset" (click)="resetTree()">Reset tree</button>
+    </div>
+
+    <div class="tv-preset-row" *ngIf="mode === 'rb'">
+      <span class="tv-preset-label">Case demos</span>
+      <button type="button" class="tv-chip tv-chip--demo" *ngFor="let d of rbDemos" (click)="runDemo(d)">{{ d.label }}</button>
+    </div>
+
+    <div class="tv-custom-row">
+      <label class="tv-field tv-field--wide">
+        <span>Custom keys</span>
+        <input type="text" [(ngModel)]="customInput" placeholder="e.g. 15 6 18 3 7 17 20 13" />
+      </label>
+      <button type="button" class="tv-btn tv-btn--alt" (click)="buildCustom()">Build tree</button>
+    </div>
+  </div>
+
+  <!-- ── main: tree canvas + code panel ────────────────────────────────── -->
+  <div class="tv-main">
+    <div class="tv-left">
+      <div class="tv-canvas-wrap">
+        <div *ngIf="displayState.root === 0" class="tv-empty">The tree is empty. Insert a key or load a preset.</div>
+        <svg *ngIf="displayState.root !== 0"
+             class="tv-svg"
+             [attr.viewBox]="'0 0 ' + viewW + ' ' + viewH"
+             [attr.width]="viewW" [attr.height]="viewH"
+             xmlns="http://www.w3.org/2000/svg">
+          <!-- edges -->
+          <line *ngFor="let e of edges" class="tv-edge" [class.tv-edge--faded]="e.faded"
+                [attr.x1]="e.x1" [attr.y1]="e.y1" [attr.x2]="e.x2" [attr.y2]="e.y2" />
+          <!-- NIL edges + leaves (RB mode) -->
+          <line *ngFor="let ne of nilEdges" class="tv-edge tv-edge--nil"
+                [attr.x1]="ne.x1" [attr.y1]="ne.y1" [attr.x2]="ne.x2" [attr.y2]="ne.y2" />
+          <g *ngFor="let nl of nilLeaves" [attr.transform]="'translate(' + nl.x + ',' + nl.y + ')'">
+            <rect class="tv-nil"
+                  [attr.x]="-(nilW / 2)"
+                  [attr.y]="-(nilH / 2)"
+                  [attr.width]="nilW"
+                  [attr.height]="nilH"
+                  rx="6" />
+            <text class="tv-nil-text" [style.fontSize.px]="nilFontSize" y="4">NIL</text>
+          </g>
+          <!-- nodes -->
+          <g *ngFor="let p of placed; trackBy: trackNode"
+             class="tv-node" [attr.transform]="'translate(' + p.x + ',' + p.y + ')'">
+            <circle *ngIf="p.role" class="tv-halo" [ngClass]="'tv-halo--' + p.role" [attr.r]="nodeR + 7" />
+            <circle class="tv-node-circle"
+                    [ngClass]="(mode === 'rb' ? (p.color === 'R' ? 'tv-fill--red' : 'tv-fill--black') : 'tv-fill--plain')"
+                    [class.tv-node--role]="p.role"
+                    [attr.r]="nodeR" />
+            <text class="tv-node-key"
+                  [class.tv-key--light]="mode === 'rb'"
+                  [style.fontSize.px]="nodeFontSize"
+                  y="5">{{ p.key }}</text>
+          </g>
+        </svg>
+      </div>
+
+      <!-- legend -->
+      <div class="tv-legend">
+        <span><i class="lg lg-active"></i>active</span>
+        <span><i class="lg lg-compared"></i>compared</span>
+        <span><i class="lg lg-path"></i>path</span>
+        <span><i class="lg lg-found"></i>result</span>
+        <span><i class="lg lg-removed"></i>removed</span>
+        <span *ngIf="mode === 'rb'"><i class="lg lg-red"></i>red</span>
+        <span *ngIf="mode === 'rb'"><i class="lg lg-black"></i>black</span>
+      </div>
+
+      <!-- status / explanation -->
+      <div class="tv-status" *ngIf="currentStep as st; else idleStatus">
+        <div class="tv-status-top">
+          <strong>{{ st.title }}</strong>
+          <span class="tv-casetag" *ngIf="st.caseTag">{{ st.caseTag }}</span>
+        </div>
+        <p class="tv-explain">{{ st.explanation }}</p>
+        <p class="tv-pointer" *ngIf="st.pointerNote">Pointer write: <code>{{ st.pointerNote }}</code></p>
+        <p class="tv-invariant" *ngIf="st.invariant"><strong>Invariant:</strong> {{ st.invariant }}</p>
+      </div>
+      <ng-template #idleStatus>
+        <div class="tv-status tv-status--idle">
+          <strong>Ready.</strong>
+          <p class="tv-explain">{{ opSummary || 'Choose an operation above and press Run to start a step-by-step trace.' }}</p>
+        </div>
+      </ng-template>
+
+      <!-- metrics -->
+      <div class="tv-metrics">
+        <div class="tv-metric" *ngFor="let m of metricLabels">
+          <span class="tv-metric-label">{{ m.label }}</span>
+          <strong class="tv-metric-val">{{ m.value }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- code panel -->
+    <div class="tv-code" [class.tv-code--collapsed]="!showCode">
+      <button type="button" class="tv-code-toggle" (click)="showCode = !showCode">
+        <span>CLRS pseudocode</span>
+        <span class="tv-code-caret">{{ showCode ? '▾' : '▸' }}</span>
+      </button>
+      <div class="tv-code-body" *ngIf="showCode">
+        <div class="tv-code-block" *ngFor="let b of codeBlocks"
+             [class.tv-code-block--dim]="currentStep && !isBlockActive(b.name)">
+          <div class="tv-code-name" [class.tv-code-name--active]="isBlockActive(b.name)">{{ b.name }}</div>
+          <div class="tv-code-line" *ngFor="let ln of b.lines"
+               [class.tv-code-line--active]="isLineActive(ln.id)"
+               [class.tv-code-line--header]="ln.n === ''">
+            <span class="tv-code-num">{{ ln.n }}</span>
+            <code class="tv-code-text" [style.paddingLeft.px]="ln.indent * 16">{{ ln.text }}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── playback ──────────────────────────────────────────────────────── -->
+  <div class="tv-playback">
+    <div class="tv-transport">
+      <button type="button" class="tv-pb" (click)="jumpStart()" [disabled]="!hasSteps || atStart" title="First step">⏮</button>
+      <button type="button" class="tv-pb" (click)="prev()" [disabled]="!hasSteps || atStart" title="Previous">◀</button>
+      <button type="button" class="tv-pb tv-pb--play" (click)="togglePlay()" [disabled]="!hasSteps" title="Play / Pause">
+        {{ playing ? '⏸' : '▶' }}
+      </button>
+      <button type="button" class="tv-pb" (click)="next()" [disabled]="!hasSteps || atEnd" title="Next">▶</button>
+      <button type="button" class="tv-pb" (click)="jumpEnd()" [disabled]="!hasSteps || atEnd" title="Last step">⏭</button>
+    </div>
+
+    <div class="tv-progress" *ngIf="hasSteps">
+      Step <strong>{{ stepIndex + 1 }}</strong> / {{ steps.length }}
+    </div>
+
+    <label class="tv-field tv-field--speed">
+      <span>Speed</span>
+      <select [(ngModel)]="speedMs" (ngModelChange)="onSpeedChange()">
+        <option [ngValue]="1800">0.5×</option>
+        <option [ngValue]="1100">1×</option>
+        <option [ngValue]="700">1.5×</option>
+        <option [ngValue]="420">2.5×</option>
+      </select>
+    </label>
+
+    <div class="tv-history">
+      <button type="button" class="tv-btn tv-btn--ghost" (click)="undo()" [disabled]="!canUndo">↶ Undo</button>
+      <button type="button" class="tv-btn tv-btn--ghost" (click)="redo()" [disabled]="!canRedo">↷ Redo</button>
+    </div>
+  </div>
+
+  <!-- ── operation log ─────────────────────────────────────────────────── -->
+  <div class="tv-logwrap">
+    <span class="tv-log-title">Operation log</span>
+    <ul class="tv-log">
+      <li *ngFor="let l of log" [ngClass]="'tv-log--' + l.tone">{{ l.text }}</li>
+    </ul>
+  </div>
+</section>

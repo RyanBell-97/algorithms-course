@@ -1,0 +1,70 @@
+:host {
+  display: contents;
+}
+
+.math-run,
+.fraction-run,
+.stacked-fraction {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.math-run {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #10223a;
+  display: inline;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: .94em;
+  line-height: 1.65;
+  padding: 0 .04em;
+  text-align: left;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.fraction-run {
+  align-items: center;
+  direction: ltr;
+  display: inline-flex;
+  gap: .08em;
+  text-align: left;
+  unicode-bidi: isolate;
+  vertical-align: -.28em;
+  white-space: nowrap;
+}
+
+.fraction-sign {
+  display: inline-block;
+  font-weight: 700;
+  line-height: 1;
+  margin-right: .05em;
+}
+
+.stacked-fraction {
+  align-items: stretch;
+  display: inline-grid;
+  font-size: 1em;
+  font-variant-numeric: tabular-nums;
+  grid-template-rows: auto 1px auto;
+  line-height: 1.05;
+  min-width: 1.1em;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.fraction-num,
+.fraction-den {
+  display: block;
+  padding: 0 .16em;
+}
+
+.fraction-bar {
+  background: currentColor;
+  display: block;
+  height: 1px;
+  margin: .12em 0;
+  min-width: 100%;
+}

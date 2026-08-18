@@ -1,0 +1,279 @@
+<section class="u3-card" *ngIf="artifactId">
+  <header class="u3-head">
+    <span class="u3-kicker">CLRS synchronized lab</span>
+    <h3>{{ title }}</h3>
+    <p>{{ subtitle }}</p>
+  </header>
+
+  <div class="u3-tabs" *ngIf="artifactId === 'merge-sort-viz'">
+    <span>Preset</span>
+    <button type="button" *ngFor="let preset of mergePresets"
+            [class.is-active]="preset.id === mergePresetId"
+            (click)="selectMergePreset(preset.id)">
+      {{ preset.label }}
+    </button>
+  </div>
+
+  <div class="u3-tabs" *ngIf="artifactId === 'heapify-viz'">
+    <span>Engine</span>
+    <button type="button" *ngFor="let mode of heapModes"
+            [class.is-active]="mode.id === heapMode"
+            (click)="selectHeapMode(mode.id)">
+      {{ mode.label }}
+    </button>
+  </div>
+
+  <div class="u3-tabs" *ngIf="artifactId === 'randomized-quicksort-viz'">
+    <span>Seed</span>
+    <button type="button" *ngFor="let seed of randomSeeds"
+            [class.is-active]="seed === randomSeed"
+            (click)="selectRandomSeed(seed)">
+      {{ seed }}
+    </button>
+  </div>
+
+  <div class="u3-tabs" *ngIf="artifactId === 'counting-radix-sort-viz'">
+    <span>Mode</span>
+    <button type="button" [class.is-active]="countingMode === 'counting'" (click)="selectCountingMode('counting')">
+      Counting sort
+    </button>
+    <button type="button" [class.is-active]="countingMode === 'radix'" (click)="selectCountingMode('radix')">
+      Radix sort
+    </button>
+  </div>
+
+  <div class="u3-tabs" *ngIf="artifactId === 'counting-radix-sort-viz' && countingMode === 'counting'">
+    <span>Preset</span>
+    <button type="button" *ngFor="let preset of countingPresets"
+            [class.is-active]="preset.id === countingPresetId"
+            (click)="selectCountingPreset(preset.id)">
+      {{ preset.label }}
+    </button>
+  </div>
+
+  <div class="u3-main">
+    <article class="u3-panel u3-visual">
+      <div class="u3-stage-top">
+        <div>
+          <strong>{{ currentStep.title }}</strong>
+          <p>{{ currentStep.explanation }}</p>
+        </div>
+        <span>{{ stepProgress }}</span>
+      </div>
+
+      <div class="u3-merge-workspace" *ngIf="currentStep.mergeWorkspace as merge">
+        <div>
+          <span class="u3-mini-label">L</span>
+          <div class="u3-cell-row compact">
+            <span class="u3-cell" *ngFor="let cell of merge.left; trackBy: trackCell"
+                  [ngClass]="'tone-' + cell.tone" [class.is-active]="cell.active">
+              <b>{{ cell.label }}</b>
+              <small *ngIf="cell.sub">{{ cell.sub }}</small>
+            </span>
+          </div>
+        </div>
+        <div>
+          <span class="u3-mini-label">R</span>
+          <div class="u3-cell-row compact">
+            <span class="u3-cell" *ngFor="let cell of merge.right; trackBy: trackCell"
+                  [ngClass]="'tone-' + cell.tone" [class.is-active]="cell.active">
+              <b>{{ cell.label }}</b>
+              <small *ngIf="cell.sub">{{ cell.sub }}</small>
+            </span>
+          </div>
+        </div>
+        <div>
+          <span class="u3-mini-label">Output segment</span>
+          <div class="u3-cell-row compact">
+            <span class="u3-cell" *ngFor="let cell of merge.output; trackBy: trackCell"
+                  [ngClass]="'tone-' + cell.tone" [class.is-active]="cell.active">
+              <b>{{ cell.label }}</b>
+              <small *ngIf="cell.sub">{{ cell.sub }}</small>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="u3-array-board" *ngIf="currentStep.arrays.length">
+        <div class="u3-array-row" *ngFor="let row of currentStep.arrays">
+          <div class="u3-row-head">
+            <span>{{ row.label }}</span>
+            <small *ngIf="row.note">{{ row.note }}</small>
+          </div>
+          <div class="u3-cell-row">
+            <span class="u3-cell" *ngFor="let cell of row.cells; trackBy: trackCell"
+                  [ngClass]="'tone-' + cell.tone" [class.is-active]="cell.active">
+              <b>{{ cell.label }}</b>
+              <small *ngIf="cell.sub">{{ cell.sub }}</small>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="u3-heap-wrap" *ngIf="currentStep.heap as heap">
+        <svg class="u3-heap-svg" [attr.viewBox]="heap.viewBox" role="img" aria-label="Heap tree">
+          <line *ngFor="let edge of heap.edges"
+                class="u3-edge"
+                [class.is-muted]="edge.muted"
+                [attr.x1]="edge.x1" [attr.y1]="edge.y1"
+                [attr.x2]="edge.x2" [attr.y2]="edge.y2" />
+          <g *ngFor="let node of heap.nodes; trackBy: trackNode"
+             class="u3-heap-node"
+             [ngClass]="'tone-' + node.tone"
+             [attr.transform]="'translate(' + node.x + ',' + node.y + ')'">
+            <circle r="22"></circle>
+            <text y="5">{{ node.value }}</text>
+            <text class="u3-node-index" y="39">{{ node.index }}</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="u3-decision" *ngIf="artifactId === 'comparison-sort-lower-bound-viz'">
+        <svg class="u3-decision-svg" viewBox="0 0 650 340" role="img" aria-label="Decision tree for sorting three elements">
+          <line *ngFor="let edge of lowerEdges"
+                class="u3-edge"
+                [class.is-active]="lowerEdgeActive(edge)"
+                [attr.x1]="lowerNodeById(edge.from).x"
+                [attr.y1]="lowerNodeById(edge.from).y + 22"
+                [attr.x2]="lowerNodeById(edge.to).x"
+                [attr.y2]="lowerNodeById(edge.to).y - 22" />
+          <text *ngFor="let edge of lowerEdges"
+                class="u3-edge-label"
+                [attr.x]="(lowerNodeById(edge.from).x + lowerNodeById(edge.to).x) / 2"
+                [attr.y]="(lowerNodeById(edge.from).y + lowerNodeById(edge.to).y) / 2">
+            {{ edge.label }}
+          </text>
+          <g *ngFor="let node of lowerNodes"
+             class="u3-decision-node"
+             [class.is-active]="lowerNodeActive(node.id)"
+             [class.is-visited]="lowerNodeVisited(node.id)"
+             [class.is-leaf]="node.leaf"
+             [attr.transform]="'translate(' + node.x + ',' + node.y + ')'">
+            <rect x="-54" y="-21" width="108" height="42" rx="8"></rect>
+            <text y="5">{{ node.label }}</text>
+          </g>
+        </svg>
+
+        <div class="u3-branch-controls" *ngIf="!currentLowerNode.leaf">
+          <button type="button" class="primary" (click)="lowerAnswer(true)">Take <= branch</button>
+          <button type="button" (click)="lowerAnswer(false)">Take > branch</button>
+        </div>
+      </div>
+
+      <div class="u3-recursion" *ngIf="currentStep.recursion?.length">
+        <span class="u3-mini-label">Frames / intervals</span>
+        <div class="u3-frame-row">
+          <span *ngFor="let frame of currentStep.recursion"
+                class="u3-frame"
+                [ngClass]="'tone-' + frame.tone"
+                [style.marginLeft.px]="frame.depth * 10">
+            {{ frame.label }}
+          </span>
+        </div>
+      </div>
+
+      <div class="u3-run-table" *ngIf="artifactId === 'randomized-quicksort-viz'">
+        <div class="u3-table-title">Seeded comparison on sorted input [1..10]</div>
+        <div class="u3-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Run</th><th>Comparisons</th><th>Depth</th><th>Sorted?</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of randomRuns">
+                <td>{{ row.label }}</td>
+                <td>{{ row.comparisons }}</td>
+                <td>{{ row.depth }}</td>
+                <td>{{ row.sorted ? 'yes' : 'no' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="u3-run-table" *ngIf="artifactId === 'comparison-sort-lower-bound-viz'">
+        <div class="u3-table-title">Small lower-bound values</div>
+        <div class="u3-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Input size</th><th>Leaves and height</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of lowerTable">
+                <td>{{ row.label }}</td>
+                <td>{{ row.value }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+
+    <aside class="u3-code">
+      <button type="button" class="u3-code-title">
+        <span>CLRS / CLRS-style pseudocode</span>
+      </button>
+      <div class="u3-code-block" *ngFor="let block of activeCodeBlocks"
+           [class.is-dim]="isBlockDim(block.name)">
+        <div class="u3-code-name">{{ block.name }}</div>
+        <div class="u3-code-line" *ngFor="let line of block.lines; trackBy: trackCodeLine"
+             [class.is-active]="isLineActive(line.id)">
+          <span>{{ line.n }}</span>
+          <code [style.paddingLeft.px]="line.indent * 14">{{ line.text }}</code>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="u3-info-grid">
+    <section class="u3-panel">
+      <h4>Invariant</h4>
+      <p>{{ currentStep.invariant }}</p>
+    </section>
+
+    <section class="u3-panel" *ngIf="currentStep.pointers.length">
+      <h4>Live pointers</h4>
+      <div class="u3-metrics">
+        <div class="u3-metric" *ngFor="let pointer of currentStep.pointers">
+          <span>{{ pointer.label }}</span>
+          <strong>{{ pointer.value }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="u3-panel" *ngIf="currentStep.metrics.length">
+      <h4>Counters</h4>
+      <div class="u3-metrics">
+        <div class="u3-metric" *ngFor="let metric of currentStep.metrics">
+          <span>{{ metric.label }}</span>
+          <strong>{{ metric.value }}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="u3-panel" *ngIf="currentStep.formula?.length">
+      <h4>Complexity / guarantee</h4>
+      <p *ngFor="let line of currentStep.formula">{{ line }}</p>
+    </section>
+
+    <section class="u3-panel" *ngIf="currentStep.verification?.length">
+      <h4>Verification</h4>
+      <div class="u3-checks">
+        <span *ngFor="let check of currentStep.verification"
+              [class.is-ok]="check.ok"
+              [class.is-bad]="!check.ok">
+          {{ check.ok ? 'OK' : 'Pending' }}: {{ check.label }}
+        </span>
+      </div>
+    </section>
+  </div>
+
+  <div class="u3-actions">
+    <button type="button" (click)="prev()" [disabled]="atStart">Previous</button>
+    <button type="button" class="primary" (click)="next()" [disabled]="atEnd">
+      {{ artifactId === 'comparison-sort-lower-bound-viz' ? 'Take <= / Next' : 'Next step' }}
+    </button>
+    <button type="button" (click)="jumpEnd()" [disabled]="atEnd">Run to end</button>
+    <button type="button" (click)="reset()">Reset</button>
+  </div>
+</section>

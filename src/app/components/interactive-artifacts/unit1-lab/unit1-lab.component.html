@@ -1,0 +1,734 @@
+<ng-container [ngSwitch]="artifact">
+
+  <!-- ═══════════════════════════════ L1 — ALGORITHM CLASSIFIER LAB ═══════ -->
+  <section *ngSwitchCase="'algo-classifier'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Diagnostic Lab</span>
+      <h3>Algorithm Classifier Lab</h3>
+      <p>Classify each procedure, then inspect which of Knuth's five properties pass or fail. Repair the ones that fall short.</p>
+    </header>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <div class="cls-list">
+          <article *ngFor="let p of classProcs" class="cls-item"
+                   [class.is-correct]="classAnswers[p.id] === p.isAlgo"
+                   [class.is-wrong]="classAnswers[p.id] !== undefined && classAnswers[p.id] !== p.isAlgo">
+            <p class="cls-text">{{ p.text }}</p>
+            <div class="cls-btns">
+              <button type="button" class="cls-btn yes"
+                      [class.picked]="classAnswers[p.id] === true"
+                      (click)="classPick(p.id, true)">Algorithm</button>
+              <button type="button" class="cls-btn no"
+                      [class.picked]="classAnswers[p.id] === false"
+                      (click)="classPick(p.id, false)">Not an algorithm</button>
+            </div>
+
+            <div *ngIf="classAnswers[p.id] !== undefined" class="cls-feedback">
+              <p class="cls-verdict"
+                 [class.ok]="classAnswers[p.id] === p.isAlgo"
+                 [class.bad]="classAnswers[p.id] !== p.isAlgo">
+                <strong>{{ classAnswers[p.id] === p.isAlgo ? 'Correct.' : 'Not quite.' }}</strong>
+                {{ p.verdict }}
+              </p>
+              <div class="cls-tests">
+                <div *ngFor="let c of knuthChecklist" class="cls-test"
+                     [class.pass]="classProp(p, c.key).pass"
+                     [class.fail]="!classProp(p, c.key).pass">
+                  <span class="cls-test-top">
+                    <span class="cls-test-mark">{{ classProp(p, c.key).pass ? '✓' : '✗' }}</span>
+                    <span class="cls-test-name">{{ c.name }}</span>
+                  </span>
+                  <span class="cls-test-note">{{ classProp(p, c.key).note }}</span>
+                </div>
+              </div>
+              <div *ngIf="p.repair" class="cls-repair-wrap">
+                <button type="button" class="cls-repair-btn" (click)="classToggleRepair(p.id)">
+                  {{ classRepair[p.id] ? 'Hide repair' : 'Repair this non-algorithm' }}
+                </button>
+                <p *ngIf="classRepair[p.id]" class="cls-repair">{{ p.repair }}</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Score</h4>
+          <div class="cls-score">
+            <strong>{{ classCorrect }} / {{ classProcs.length }}</strong>
+            <span>{{ classAnswered }} answered</span>
+          </div>
+          <div class="u1-progress"><span [style.width.%]="(classAnswered / classProcs.length) * 100"></span></div>
+          <button type="button" class="u1-btn ghost full" (click)="classReset()" [disabled]="classAnswered === 0">Reset</button>
+        </div>
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Knuth / CLRS checklist</h4>
+          <ul class="cls-checklist">
+            <li *ngFor="let c of knuthChecklist">
+              <strong>{{ c.name }}</strong>
+              <span>{{ c.test }}</span>
+            </li>
+          </ul>
+          <p class="u1-hint">If even one property fails, the procedure is at most a heuristic, a specification, or wishful thinking — not an algorithm.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L2 — RAM COST COUNTER LAB ═══════════ -->
+  <section *ngSwitchCase="'ram-cost-counter'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Cost Simulator</span>
+      <h3>RAM Cost Counter Lab</h3>
+      <p>Step through real execution on a concrete input. Each line carries a cost cᵢ; watch the line counts and the running total build into T(n).</p>
+    </header>
+
+    <div class="ram-tabs">
+      <button type="button" *ngFor="let prog of ramPrograms" class="ram-tab"
+              [class.active]="ramProgram.id === prog.id" (click)="ramSelect(prog.id)">
+        {{ prog.label }}
+      </button>
+    </div>
+    <p class="ram-blurb">{{ ramProgram.blurb }}</p>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <div class="ram-code">
+          <div class="ram-line" *ngFor="let line of ramProgram.lines; let li = index"
+               [class.active]="ramFrame && ramFrame.line === li">
+            <span class="ram-lnum">{{ li + 1 }}</span>
+            <code class="ram-src">{{ line.text }}</code>
+            <span class="ram-cost">{{ line.cost }}</span>
+            <span class="ram-count" [class.lit]="ramFrame && ramFrame.line === li">×{{ ramFrame ? ramFrame.counts[li] : 0 }}</span>
+          </div>
+        </div>
+
+        <div class="ram-array-wrap">
+          <span class="u1-label">Input A &nbsp; (n = {{ ramN() }}<ng-container *ngIf="ramProgram.target !== undefined">, &nbsp;v = {{ ramProgram.target }}</ng-container>)</span>
+          <div class="ram-array">
+            <span *ngFor="let v of ramProgram.array; let ai = index" class="ram-cell"
+                  [class.focus]="ramFrame && ramFrame.focus === ai">
+              <small>{{ ai + 1 }}</small>{{ v }}
+            </span>
+          </div>
+        </div>
+
+        <p class="ram-note">{{ ramFrame ? ramFrame.note : '' }}</p>
+
+        <div class="u1-controls">
+          <button type="button" class="u1-btn" (click)="ramPrev()" [disabled]="!ramStarted">‹ Back</button>
+          <button type="button" class="u1-btn primary" (click)="ramNext()" [disabled]="ramDone">Step ›</button>
+          <button type="button" class="u1-btn" (click)="ramRun()" [disabled]="ramDone">Run to end</button>
+          <button type="button" class="u1-btn ghost" (click)="ramRestart()">Restart</button>
+        </div>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Live state</h4>
+          <div class="ram-stats">
+            <div class="ram-stat"><span>Loop index i</span><strong>{{ ramFrame && ramFrame.i !== null ? ramFrame.i : '—' }}</strong></div>
+            <div class="ram-stat"><span>{{ ramProgram.resultLabel }}</span><strong>{{ ramFrame ? ramFrame.result : '—' }}</strong></div>
+            <div class="ram-stat wide"><span>Operations so far</span><strong class="big">{{ ramFrame ? ramFrame.ops : 0 }}</strong></div>
+          </div>
+        </div>
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Cost model</h4>
+          <div class="ram-formula">
+            <span class="ram-formula-lbl">Symbolic count</span>
+            <code>{{ ramProgram.symbolic }}</code>
+          </div>
+          <div class="ram-formula">
+            <span class="ram-formula-lbl">Exact, this input (n = {{ ramN() }})</span>
+            <code>{{ ramFrame ? ramFrame.ops : 0 }} line-executions{{ ramDone ? ' (final)' : ' so far' }}</code>
+          </div>
+          <div class="ram-formula tight">
+            <span class="ram-formula-lbl">Asymptotic class</span>
+            <code class="theta">{{ ramProgram.asymptotic }}</code>
+          </div>
+          <p class="u1-hint">{{ ramProgram.guardNote }}</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L3 — INSERTION SORT VISUALIZER ══════ -->
+  <section *ngSwitchCase="'insertion-sort-viz'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Algorithm Visualizer</span>
+      <h3>Insertion Sort Visualizer</h3>
+      <p>Every visual action is tied to the exact CLRS line that caused it. Track the sorted prefix, the key, and the live cost metrics.</p>
+    </header>
+
+    <div class="is-presets">
+      <span class="u1-label">Preset:</span>
+      <button type="button" *ngFor="let pr of sortPresets" class="is-preset"
+              [class.active]="sortPresetId === pr.id" (click)="sortPreset(pr.id)">{{ pr.label }}</button>
+      <span class="is-custom">
+        <input type="text" class="u1-input" [(ngModel)]="sortInput" placeholder="custom: 5 2 4 6 1 3" />
+        <button type="button" class="u1-btn" (click)="sortApplyInput()">Load</button>
+      </span>
+    </div>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <div class="is-array">
+          <div *ngFor="let v of sortFrame.arr; let idx = index" class="is-cell"
+               [class.sorted]="sortFrame.roles[idx] === 'sorted'"
+               [class.key]="sortFrame.roles[idx] === 'key'"
+               [class.gap]="sortFrame.roles[idx] === 'gap'"
+               [class.compare]="sortFrame.roles[idx] === 'compare'">
+            <span class="is-val">{{ v }}</span>
+            <span class="is-idx">{{ idx + 1 }}</span>
+          </div>
+        </div>
+
+        <div class="is-keybar" *ngIf="sortFrame.key !== null">
+          <span class="is-keychip">key = {{ sortFrame.key }}</span>
+          <span class="is-jchip">j = {{ sortFrame.j }}</span>
+          <span class="is-ichip" *ngIf="sortFrame.i >= 0">i = {{ sortFrame.i + 1 }}</span>
+        </div>
+
+        <div class="is-legend">
+          <span class="lg sorted">sorted prefix</span>
+          <span class="lg key">key value</span>
+          <span class="lg gap">open gap</span>
+          <span class="lg compare">comparing A[i]</span>
+        </div>
+
+        <p class="is-note">{{ sortFrame.note }}</p>
+
+        <div class="u1-controls">
+          <button type="button" class="u1-btn" (click)="sortPrev()" [disabled]="sortStep === 0">‹ Prev</button>
+          <button type="button" class="u1-btn primary" (click)="sortTogglePlay()">{{ sortPlaying ? '❚❚ Pause' : '▶ Play' }}</button>
+          <button type="button" class="u1-btn" (click)="sortNext()" [disabled]="sortDone">Next ›</button>
+          <button type="button" class="u1-btn ghost" (click)="sortRestart()">Restart</button>
+          <span class="is-speed">
+            <span class="u1-label">Speed</span>
+            <button type="button" class="is-spd" [class.active]="sortSpeed === 0.5" (click)="sortSetSpeed(0.5)">0.5×</button>
+            <button type="button" class="is-spd" [class.active]="sortSpeed === 1" (click)="sortSetSpeed(1)">1×</button>
+            <button type="button" class="is-spd" [class.active]="sortSpeed === 2" (click)="sortSetSpeed(2)">2×</button>
+          </span>
+        </div>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">INSERTION-SORT(A)</h4>
+          <div class="is-code">
+            <div class="is-cline" *ngFor="let ln of sortPseudocode; let li = index"
+                 [class.active]="sortLineActive === li"
+                 [class.comment]="ln.trim().indexOf('//') === 0">
+              <span class="is-clnum">{{ li === 0 ? '' : li }}</span>
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">RAM metrics</h4>
+          <div class="is-metrics">
+            <div class="is-metric"><span>Comparisons</span><strong>{{ sortFrame.comparisons }}</strong></div>
+            <div class="is-metric"><span>Shifts</span><strong>{{ sortFrame.shifts }}</strong></div>
+            <div class="is-metric"><span>Array writes</span><strong>{{ sortFrame.writes }}</strong></div>
+            <div class="is-metric"><span>Inversions left</span><strong>{{ sortFrame.inversions }}</strong></div>
+          </div>
+          <p class="u1-hint"><strong>Stability:</strong> the guard is A[i] &gt; key, not ≥. Equal keys are never shifted past each other, so their original order is preserved.</p>
+        </div>
+        <div class="u1-panel" [attr.data-tone]="sortInversionStart === 0 ? 'green' : (sortInversionStart === (sortN*(sortN-1))/2 ? 'red' : 'gold')">
+          <h4 class="u1-panel-title">This input</h4>
+          <p class="is-behaviour-tag">{{ sortBehaviour.tag }}</p>
+          <p class="u1-hint">{{ sortBehaviour.text }}</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L4 — LOOP INVARIANT BUILDER ═════════ -->
+  <section *ngSwitchCase="'loop-invariant-builder'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Proof Builder</span>
+      <h3>Loop Invariant Proof Builder</h3>
+      <p>A loop-invariant proof is induction in disguise. Pick the correct statement for each phase — wrong picks are diagnosed by mistake type.</p>
+    </header>
+
+    <div class="li-tabs">
+      <button type="button" *ngFor="let a of liAlgos" class="li-tab"
+              [class.active]="liAlgo.id === a.id" (click)="liSelect(a.id)">{{ a.label }}</button>
+    </div>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <div class="li-invariant">
+          <span class="li-inv-tag">Candidate invariant</span>
+          <p>{{ liAlgo.invariant }}</p>
+        </div>
+
+        <article *ngFor="let phase of liAlgo.phases; let pi = index" class="li-phase"
+                 [class.solved]="liStatus(phase) === 'correct'">
+          <div class="li-phase-head">
+            <span class="li-phase-num" [class.done]="liStatus(phase) === 'correct'">
+              {{ liStatus(phase) === 'correct' ? '✓' : pi + 1 }}
+            </span>
+            <div class="li-phase-titles">
+              <strong>{{ phase.label }}</strong>
+              <span>{{ phase.prompt }}</span>
+            </div>
+          </div>
+          <div class="li-options">
+            <button type="button" *ngFor="let opt of phase.options; let oi = index" class="li-opt"
+                    [class.picked]="liChoice[phase.key] === oi"
+                    [class.correct]="liChoice[phase.key] === oi && opt.correct"
+                    [class.wrong]="liChoice[phase.key] === oi && !opt.correct"
+                    (click)="liPick(phase.key, oi)">
+              {{ opt.text }}
+            </button>
+          </div>
+          <div *ngIf="liStatus(phase) === 'wrong'" class="li-diag bad">
+            <strong>Mistake —</strong> this option {{ liMistake(phase) }}
+          </div>
+          <div *ngIf="liStatus(phase) === 'correct'" class="li-diag ok">
+            <strong>Correct.</strong> This is the {{ phase.label.toLowerCase() }} step of the induction.
+          </div>
+        </article>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">{{ liAlgo.pseudocode[0] }}</h4>
+          <div class="li-code">
+            <div class="li-cline" *ngFor="let ln of liAlgo.pseudocode; let li = index" [class.title]="li === 0">
+              <code>{{ ln }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Proof progress</h4>
+          <div class="u1-progress"><span [style.width.%]="(liSolved / liAlgo.phases.length) * 100"></span></div>
+          <p class="li-progress-lbl">{{ liSolved }} / {{ liAlgo.phases.length }} phases proved</p>
+          <p *ngIf="liComplete" class="li-done">All three phases hold — the invariant is established by induction, and the algorithm is correct for <em>every</em> input.</p>
+        </div>
+        <div class="u1-panel" data-tone="gold">
+          <h4 class="u1-panel-title">Trace vs proof</h4>
+          <p class="u1-hint">A <strong>trace</strong> runs one input and shows it works that once. A <strong>proof</strong> checks initialization, maintenance, and termination using only the loop's control flow — so it covers <em>all</em> inputs of <em>all</em> sizes at once. Testing can never replace this.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L5 — GROWTH RATE EXPLORER ═══════════ -->
+  <section *ngSwitchCase="'growth-rate-explorer'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Asymptotics Lab</span>
+      <h3>Growth Rate Explorer</h3>
+      <p>Compare how functions grow, classify expressions by their dominant term, and build a constants-based O proof.</p>
+    </header>
+
+    <div class="gr-toggles">
+      <button type="button" *ngFor="let fn of growthFns" class="gr-toggle"
+              [class.active]="growthSelected.has(fn.key)"
+              [style.--c]="fn.color"
+              (click)="growthToggle(fn.key)">{{ fn.label }}</button>
+    </div>
+
+    <div class="gr-plot-wrap">
+      <svg class="gr-plot" [attr.viewBox]="'0 0 ' + growthPlotW + ' ' + growthPlotH" preserveAspectRatio="xMidYMid meet">
+        <line *ngFor="let t of growthYTicks()" [attr.x1]="46" [attr.y1]="t.y" [attr.x2]="growthPlotW - 16" [attr.y2]="t.y"
+              stroke="#1e293b" stroke-width="1"/>
+        <text *ngFor="let t of growthYTicks()" [attr.x]="40" [attr.y]="t.y + 4" text-anchor="end"
+              font-size="11" fill="#64748b">{{ t.label }}</text>
+        <line [attr.x1]="46" [attr.y1]="14" [attr.x2]="46" [attr.y2]="growthPlotH - 30" stroke="#334155" stroke-width="1.5"/>
+        <line [attr.x1]="46" [attr.y1]="growthPlotH - 30" [attr.x2]="growthPlotW - 16" [attr.y2]="growthPlotH - 30" stroke="#334155" stroke-width="1.5"/>
+        <text [attr.x]="(growthPlotW) / 2" [attr.y]="growthPlotH - 8" text-anchor="middle" font-size="11" fill="#64748b">input size n →</text>
+        <text x="14" y="14" font-size="11" fill="#64748b">ops (log scale)</text>
+        <g *ngFor="let fn of growthActiveFns">
+          <path [attr.d]="growthPath(fn)" fill="none" [attr.stroke]="fn.color" stroke-width="2.5" stroke-linejoin="round"/>
+        </g>
+      </svg>
+      <div class="gr-plot-legend">
+        <span *ngFor="let fn of growthActiveFns" class="gr-leg"><i [style.background]="fn.color"></i>{{ fn.label }}</span>
+      </div>
+    </div>
+
+    <div class="gr-table-wrap">
+      <table class="gr-table">
+        <thead>
+          <tr><th>n</th><th *ngFor="let fn of growthActiveFns" [style.color]="fn.color">{{ fn.label }}</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let n of growthTableNs">
+            <td class="gr-n">{{ n }}</td>
+            <td *ngFor="let fn of growthActiveFns">{{ growthCell(fn, n) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="gr-grid">
+      <div class="u1-panel">
+        <h4 class="u1-panel-title">Dominant-term detector</h4>
+        <p class="u1-hint">Pick a sum of terms. The growth class keeps only the fastest-growing term and drops every constant factor.</p>
+        <div class="gr-dom-list">
+          <button type="button" *ngFor="let d of domExamples" class="gr-dom"
+                  [class.active]="domPick === d.id" (click)="domPick = domPick === d.id ? null : d.id">
+            <code>{{ d.expr }}</code>
+            <span class="gr-dom-arrow" *ngIf="domPick === d.id">→ <strong>{{ d.theta }}</strong></span>
+          </button>
+        </div>
+        <p *ngIf="domPick" class="gr-dom-why">
+          <ng-container *ngFor="let d of domExamples">
+            <span *ngIf="domPick === d.id"><strong>{{ d.expr }} = {{ d.theta }}.</strong> {{ d.why }}</span>
+          </ng-container>
+        </p>
+      </div>
+
+      <div class="u1-panel">
+        <h4 class="u1-panel-title">Five bound symbols</h4>
+        <div class="gr-bounds">
+          <div *ngFor="let b of boundCards" class="gr-bound" [attr.data-tone]="b.tone">
+            <span class="gr-bound-sym">{{ b.sym }}</span>
+            <span class="gr-bound-name">{{ b.name }}</span>
+            <span class="gr-bound-mean">{{ b.meaning }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="u1-panel gr-proof">
+      <h4 class="u1-panel-title">Proof mode — show 3n² + 5n + 100 = O(n²)</h4>
+      <p class="u1-hint">By definition, f(n) = O(n²) means: there exist constants c &gt; 0 and n₀ ≥ 1 such that f(n) ≤ c·n² for all n ≥ n₀. Choose them.</p>
+      <div class="gr-proof-controls">
+        <label class="gr-slider">
+          <span>c = <strong>{{ growthProofC }}</strong></span>
+          <input type="range" min="1" max="12" step="1" [(ngModel)]="growthProofC" />
+        </label>
+        <label class="gr-slider">
+          <span>n₀ = <strong>{{ growthProofN0 }}</strong></span>
+          <input type="range" min="1" max="20" step="1" [(ngModel)]="growthProofN0" />
+        </label>
+      </div>
+      <div class="gr-table-wrap gr-proof-wrap">
+        <table class="gr-table gr-proof-table">
+          <thead>
+            <tr><th>n</th><th>f(n)</th><th>c·n²</th><th>f ≤ c·n²?</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of growthProofRows" [class.gr-row-below]="r.state === 'below'">
+              <td class="gr-n">{{ r.n }}</td>
+              <td>{{ r.f }}</td>
+              <td>{{ r.cn2 }}</td>
+              <td [class.gr-hold]="r.state === 'hold'" [class.gr-break]="r.state === 'break'">
+                {{ r.state === 'below' ? 'n < n₀' : (r.state === 'hold' ? '✓ holds' : '✗ fails') }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="gr-proof-verdict" [class.ok]="growthProofValid" [class.bad]="!growthProofValid">
+        <ng-container *ngIf="growthProofValid">
+          <strong>Valid proof.</strong> With c = {{ growthProofC }} and n₀ = {{ growthProofN0 }}, the inequality 3n²+5n+100 ≤ {{ growthProofC }}n² holds for every n ≥ n₀. That is exactly the definition of O(n²).
+        </ng-container>
+        <ng-container *ngIf="!growthProofValid">
+          <strong>Not yet a proof.</strong> The inequality fails at n = {{ growthProofFirstFail }} (and possibly beyond). Raise c, or raise n₀ past the failure point.
+        </ng-container>
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L6 — CASE ANALYSIS SIMULATOR ════════ -->
+  <section *ngSwitchCase="'case-analysis-sim'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Case Simulator</span>
+      <h3>Case Analysis Simulator</h3>
+      <p>One input size, many running times. Pick an input pattern and see which case it lands in — and the precise vocabulary that names it.</p>
+    </header>
+
+    <div class="ca-tabs">
+      <button type="button" class="ca-tab" [class.active]="caseAlgo === 'linear-search'"
+              (click)="selectCaseAlgo('linear-search')">Linear search</button>
+      <button type="button" class="ca-tab" [class.active]="caseAlgo === 'insertion-sort'"
+              (click)="selectCaseAlgo('insertion-sort')">Insertion sort</button>
+    </div>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <p class="u1-label">Pick an input pattern (n = 8):</p>
+        <div class="ca-inputs">
+          <button type="button" *ngFor="let inp of caseAvailableInputs" class="ca-input"
+                  [class.active]="caseInput === inp.id" (click)="caseInput = inp.id">{{ inp.label }}</button>
+        </div>
+
+        <div class="ca-chart">
+          <div class="ca-bar-row" *ngFor="let bar of caseBars">
+            <span class="ca-bar-label">{{ bar.label }}</span>
+            <div class="ca-bar-track">
+              <div class="ca-bar" [attr.data-cls]="bar.cls" [class.active]="bar.active"
+                   [style.width.%]="caseBarPct(bar.ops)"></div>
+            </div>
+            <span class="ca-bar-ops">{{ bar.ops }}</span>
+          </div>
+          <p class="u1-hint ca-chart-cap">Bar length = basic operations on a size-8 input. Best is the shortest, worst is the longest.</p>
+        </div>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel" *ngIf="caseCell as r" [attr.data-tone]="r.cls === 'best' ? 'green' : (r.cls === 'worst' ? 'red' : 'gold')">
+          <h4 class="u1-panel-title">Classification</h4>
+          <p class="ca-badge" [attr.data-cls]="r.cls">
+            {{ r.cls === 'best' ? 'Best case' : r.cls === 'worst' ? 'Worst case' : 'Average / input-sensitive' }}
+          </p>
+          <code class="ca-formula">{{ r.formula }}</code>
+          <p class="ca-rule"><strong>Definition:</strong> {{ r.rule }}</p>
+          <p class="u1-hint">{{ r.why }}</p>
+        </div>
+        <div class="u1-panel" *ngIf="!caseCell">
+          <h4 class="u1-panel-title">Classification</h4>
+          <p class="u1-hint">Select an input pattern on the left to classify it.</p>
+        </div>
+        <div class="u1-panel" data-tone="gold">
+          <h4 class="u1-panel-title">Average vs expected</h4>
+          <p class="u1-hint"><strong>Average case</strong> averages the cost over a distribution of <em>inputs</em> (e.g. all permutations equally likely). <strong>Expected case</strong> averages over the <em>algorithm's own random choices</em> — as in randomized quicksort, where the pivot is random even for a fixed input. Different source of randomness, same kind of average.</p>
+        </div>
+        <div class="u1-panel" data-tone="red">
+          <h4 class="u1-panel-title">Common pitfalls</h4>
+          <ul class="ca-traps">
+            <li>The worst case is not always rare — for an absent target it is the <em>typical</em> case.</li>
+            <li>An average case is meaningless without stating the input distribution.</li>
+            <li>Big-O is not "the worst case". You can give O, Ω, or Θ for best, worst, <em>or</em> average.</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L7 — PLANE SWEEP TASTE ══════════════ -->
+  <section *ngSwitchCase="'sweep-line-viz'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Asymptotic Taste</span>
+      <h3>Plane Sweep — why Θ(n log n) beats Θ(n²)</h3>
+      <p>Closest-pair, told as a story about counting. Watch the naive all-pairs count explode while the sweep keeps comparisons local.</p>
+    </header>
+
+    <div class="u1-split">
+      <div class="u1-main">
+        <div class="sw-canvas">
+          <svg viewBox="0 0 420 240" preserveAspectRatio="xMidYMid meet">
+            <line x1="20" y1="222" x2="412" y2="222" stroke="#334155" stroke-width="1.5"/>
+            <line x1="20" y1="14" x2="20" y2="222" stroke="#334155" stroke-width="1.5"/>
+            <rect *ngIf="sweepStep >= 2 && !sweepDone"
+                  [attr.x]="sweepX - sweepDelta" y="14"
+                  [attr.width]="sweepDelta" height="208"
+                  fill="#22c55e" fill-opacity="0.12" stroke="#22c55e" stroke-width="1" stroke-dasharray="4 3"/>
+            <line *ngIf="sweepStep > 0" [attr.x1]="sweepX" y1="10" [attr.x2]="sweepX" y2="226"
+                  stroke="#f59e0b" stroke-width="2.5"/>
+            <text *ngIf="sweepStep > 0" [attr.x]="sweepX + 5" y="22" font-size="11" fill="#fbbf24">sweep</text>
+            <circle *ngFor="let p of sweepPoints" [attr.cx]="p.x" [attr.cy]="p.y" r="6"
+                    fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+            <circle *ngFor="let p of sweepVisited" [attr.cx]="p.x" [attr.cy]="p.y" r="7"
+                    [attr.fill]="sweepInStrip(p) ? '#22c55e' : '#475569'"
+                    stroke="#e2e8f0" stroke-width="1.5"/>
+            <text *ngFor="let p of sweepVisited" [attr.x]="p.x + 9" [attr.y]="p.y - 8"
+                  font-size="10" fill="#94a3b8">P{{ p.id }}</text>
+          </svg>
+        </div>
+
+        <div class="sw-counters">
+          <div class="sw-counter naive">
+            <span class="sw-counter-lbl">Naive: compare every pair</span>
+            <strong>{{ sweepNaiveComparisons }}</strong>
+            <span class="sw-counter-sub">grows as Θ(n²) — reaches {{ sweepNaiveFull }} at full size</span>
+          </div>
+          <div class="sw-counter sweep">
+            <span class="sw-counter-lbl">Sweep: compare only inside the strip</span>
+            <strong>{{ sweepStripComparisons }}</strong>
+            <span class="sw-counter-sub">grows as Θ(n log n) — strip holds O(1) points by a packing argument</span>
+          </div>
+        </div>
+
+        <div class="u1-controls">
+          <button type="button" class="u1-btn primary" (click)="sweepNext()" [disabled]="sweepDone">Advance sweep ›</button>
+          <button type="button" class="u1-btn ghost" (click)="sweepReset()">Reset</button>
+        </div>
+      </div>
+
+      <aside class="u1-side">
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">Sweep state</h4>
+          <div class="ram-stats">
+            <div class="ram-stat"><span>Points processed</span><strong>{{ sweepStep }} / {{ sweepPoints.length }}</strong></div>
+            <div class="ram-stat"><span>Active strip size</span><strong>{{ sweepActiveSet.length }}</strong></div>
+            <div class="ram-stat wide"><span>Closest pair so far (δ)</span><strong class="big">{{ sweepDeltaLabel }}</strong></div>
+          </div>
+        </div>
+        <div class="u1-panel">
+          <h4 class="u1-panel-title">The idea</h4>
+          <ol class="sw-steps">
+            <li>Sort the points by x-coordinate once — Θ(n log n).</li>
+            <li>Sweep a vertical line left to right.</li>
+            <li>Keep only points within distance δ of the line — the green <em>active strip</em>.</li>
+            <li>A new point can only beat δ against points already in the strip.</li>
+          </ol>
+        </div>
+        <div class="u1-panel" data-tone="gold">
+          <h4 class="u1-panel-title">Why the strip is small</h4>
+          <p class="u1-hint">All strip points are already ≥ δ apart, so only a constant number fit in any δ-by-2δ window. Each new point therefore does O(1) work — <em>after</em> an O(log n) lookup. The active set is kept in a <strong>balanced BST</strong>, which Unit 4 builds in full. This is a taste of asymptotic thinking, not a closest-pair implementation.</p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L8 — COMPLEXITY MATCH ═══════════════ -->
+  <section *ngSwitchCase="'complexity-match'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Review Game</span>
+      <h3>Complexity Match</h3>
+      <p>Pick an algorithm card, then click its growth class. Change your mind freely until you check.</p>
+    </header>
+
+    <div class="cm-board">
+      <div class="cm-algos">
+        <button type="button" *ngFor="let a of cmAlgos" class="cm-algo"
+                [class.active]="cmActive === a.id"
+                [class.assigned]="cmAssign[a.id]"
+                [class.correct]="cmState(a.id) === 'correct'"
+                [class.wrong]="cmState(a.id) === 'wrong'"
+                (click)="cmPick(a.id)">
+          <span class="cm-algo-label">{{ a.label }}</span>
+          <span class="cm-algo-sub">{{ a.sub }}</span>
+          <span *ngIf="cmAssign[a.id]" class="cm-algo-tag">{{ cmAssign[a.id] }}</span>
+        </button>
+      </div>
+      <div class="cm-buckets">
+        <button type="button" *ngFor="let b of cmBuckets" class="cm-bucket"
+                [class.armed]="cmActive && !cmChecked"
+                [disabled]="cmChecked"
+                (click)="cmDrop(b)">{{ b }}</button>
+      </div>
+    </div>
+
+    <div class="cm-footer">
+      <span class="cm-progress"><strong>{{ cmAssigned }}</strong> / {{ cmAlgos.length }} assigned
+        <ng-container *ngIf="cmChecked"> · <strong>{{ cmCorrect }}</strong> correct</ng-container>
+      </span>
+      <div class="u1-controls">
+        <button type="button" class="u1-btn primary" (click)="cmCheck()"
+                [disabled]="cmAssigned < cmAlgos.length || cmChecked">Check answers</button>
+        <button type="button" class="u1-btn ghost" (click)="cmReset()">Reset</button>
+      </div>
+    </div>
+
+    <div *ngIf="cmChecked" class="cm-explain">
+      <div *ngFor="let a of cmAlgos" class="cm-exp-row" [class.bad]="cmState(a.id) === 'wrong'">
+        <span class="cm-exp-name">{{ a.label }}</span>
+        <span class="cm-exp-ans">
+          <ng-container *ngIf="cmState(a.id) === 'wrong'">
+            <s>{{ cmAssign[a.id] }}</s> → <strong>{{ a.correct }}</strong>
+          </ng-container>
+          <ng-container *ngIf="cmState(a.id) === 'correct'"><strong>{{ a.correct }}</strong> ✓</ng-container>
+        </span>
+        <span class="cm-exp-why">{{ a.why }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L8 — INVERSION COUNTER ══════════════ -->
+  <section *ngSwitchCase="'inversion-counter'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Review Visualizer</span>
+      <h3>Inversion Counter</h3>
+      <p>An inversion is a pair out of order. Insertion sort does exactly one shift per inversion — its running time is Θ(n + I).</p>
+    </header>
+
+    <div class="inv-input-row">
+      <span class="u1-label">Array:</span>
+      <input type="text" class="u1-input" [(ngModel)]="invInput" placeholder="4 1 5 2 6 3" />
+      <span class="inv-presets">
+        <button type="button" class="inv-preset" (click)="invInput='1 2 3 4 5 6'">sorted</button>
+        <button type="button" class="inv-preset" (click)="invInput='6 5 4 3 2 1'">reverse</button>
+        <button type="button" class="inv-preset" (click)="invInput='1 2 4 3 5 6'">nearly</button>
+        <button type="button" class="inv-preset" (click)="invInput='4 1 5 2 6 3'">mixed</button>
+      </span>
+    </div>
+
+    <div class="inv-canvas">
+      <svg [attr.viewBox]="'0 0 ' + invSvgWidth() + ' 132'" preserveAspectRatio="xMidYMid meet">
+        <path *ngFor="let p of invPairs" [attr.d]="invArc(p)" fill="none"
+              stroke="#ef4444" stroke-width="2" stroke-opacity="0.7"/>
+        <g *ngFor="let v of invArr; let idx = index">
+          <rect [attr.x]="invX(idx) - 21" y="70" width="42" height="40" rx="8"
+                fill="#111c30" stroke="#475569" stroke-width="1.5"/>
+          <text [attr.x]="invX(idx)" y="97" text-anchor="middle" font-size="18" font-weight="800" fill="#e2e8f0">{{ v }}</text>
+          <text [attr.x]="invX(idx)" y="126" text-anchor="middle" font-size="13" fill="#94a3b8">{{ idx + 1 }}</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="inv-stats">
+      <div class="inv-stat"><span>Inversions I</span><strong class="inv-big">{{ invCount }}</strong></div>
+      <div class="inv-stat"><span>Length n</span><strong>{{ invArr.length }}</strong></div>
+      <div class="inv-stat"><span>Max possible</span><strong>{{ invMax }}</strong></div>
+      <div class="inv-stat"><span>Insertion-sort shifts</span><strong>{{ invCount }}</strong></div>
+    </div>
+
+    <div class="inv-runtime" [attr.data-tone]="invCount === 0 ? 'green' : (invCount === invMax ? 'red' : 'gold')">
+      <strong>{{ invRuntime.tag }}</strong>
+      <span>{{ invRuntime.text }}</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ L8 — PROOF ERROR FINDER ═════════════ -->
+  <section *ngSwitchCase="'proof-error-finder'" class="u1-card">
+    <header class="u1-head">
+      <span class="u1-kicker">Proof Detective</span>
+      <h3>Spot the Proof Error</h3>
+      <p>Each scenario hides one real practice mistake. Click the broken step — or the invariant itself if it is too weak or mis-timed.</p>
+    </header>
+
+    <div class="pef-tabs">
+      <span *ngFor="let s of pefScenarios; let i = index" class="pef-tab" [class.active]="i === pefIndex">
+        {{ i + 1 }}
+      </span>
+      <span class="pef-tab-lbl">Scenario {{ pefIndex + 1 }} of {{ pefScenarios.length }}</span>
+    </div>
+
+    <div class="pef-algo">{{ pefScenario.algo }}</div>
+
+    <button type="button" class="pef-invariant"
+            [class.picked]="pefSelected === 'invariant'"
+            [class.right]="pefRevealed && pefScenario.errorStep === 'invariant'"
+            [class.wrongpick]="pefRevealed && pefSelected === 'invariant' && pefScenario.errorStep !== 'invariant'"
+            [disabled]="pefRevealed"
+            (click)="pefPick('invariant')">
+      <span class="pef-inv-tag">Invariant</span>
+      <span class="pef-inv-text">{{ pefScenario.invariant }}</span>
+      <span *ngIf="pefScenario.invariantNote" class="pef-inv-note">{{ pefScenario.invariantNote }}</span>
+    </button>
+
+    <div class="pef-steps">
+      <button type="button" *ngFor="let st of pefScenario.steps" class="pef-step"
+              [class.picked]="pefSelected === st.id"
+              [class.right]="pefRevealed && pefScenario.errorStep === st.id"
+              [class.wrongpick]="pefRevealed && pefSelected === st.id && pefScenario.errorStep !== st.id"
+              [disabled]="pefRevealed"
+              (click)="pefPick(st.id)">
+        <span class="pef-step-lbl">{{ st.label }}</span>
+        <span class="pef-step-text">{{ st.text }}</span>
+      </button>
+    </div>
+
+    <div class="u1-controls">
+      <button type="button" class="u1-btn primary" (click)="pefReveal()" [disabled]="!pefSelected || pefRevealed">Reveal the bug</button>
+      <button type="button" class="u1-btn" (click)="pefNext()">Next scenario ›</button>
+    </div>
+
+    <div *ngIf="pefRevealed" class="pef-explain" [class.ok]="pefCorrect" [class.bad]="pefCorrect === false">
+      <p class="pef-result">
+        <strong>{{ pefCorrect ? '✓ Correct.' : '✗ Not the bug.' }}</strong>
+        <span class="pef-category">{{ pefScenario.category }}</span>
+      </p>
+      <p>{{ pefScenario.errorExplain }}</p>
+    </div>
+  </section>
+
+</ng-container>

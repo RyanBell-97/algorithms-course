@@ -1,0 +1,218 @@
+<a class="skip-link" href="#lesson-content">Skip to lesson</a>
+
+<div class="course-shell">
+  <header class="topbar">
+    <a class="brand" routerLink="/" aria-label="Algorithms and Data Structures home">
+      <span class="brand-mark" aria-hidden="true">A<span>→</span>D</span>
+      <span>
+        <strong>Algorithms &amp; Data Structures</strong>
+        <small>Open course</small>
+      </span>
+    </a>
+
+    <div class="topbar-actions">
+      <span class="course-stat">11 units</span>
+      <span class="course-stat">69 lessons</span>
+      <a class="source-link" href="https://github.com/RyanBell-97/algorithms-course" target="_blank" rel="noreferrer">
+        Source code <span aria-hidden="true">↗</span>
+      </a>
+      <button class="menu-button" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen">
+        <span aria-hidden="true">☰</span> Course menu
+      </button>
+    </div>
+  </header>
+
+  <aside class="course-sidebar" [class.is-open]="menuOpen" aria-label="Course navigation">
+    <div class="sidebar-intro">
+      <p class="eyebrow">Your progress</p>
+      <div class="progress-row">
+        <strong>{{ completionPercent }}%</strong>
+        <span>{{ completed.size }} / {{ flatLessons.length }} lessons</span>
+      </div>
+      <div class="progress-track" aria-hidden="true"><span [style.width.%]="completionPercent"></span></div>
+    </div>
+
+    <label class="course-search">
+      <span>Find a lesson</span>
+      <input type="search" [(ngModel)]="searchTerm" placeholder="Search topics…" />
+    </label>
+
+    <nav class="unit-list">
+      <section *ngFor="let navUnit of course.units; let unitIndex = index" [hidden]="!hasVisibleLessons(navUnit)">
+        <h2><span>{{ unitIndex + 1 }}</span>{{ navUnit.title }}</h2>
+        <a
+          *ngFor="let navLesson of visibleLessons(navUnit)"
+          [routerLink]="['/lesson', navLesson.id]"
+          [class.is-active]="navLesson.id === lesson.id"
+          [class.is-complete]="isCompleted(navLesson.id)">
+          <span class="lesson-status" aria-hidden="true">{{ isCompleted(navLesson.id) ? '✓' : navLesson.order }}</span>
+          <span>{{ navLesson.title }}</span>
+        </a>
+      </section>
+    </nav>
+
+    <div class="sidebar-license">
+      <strong>Free to learn from and reuse</strong>
+      <span>Content: CC BY 4.0 · Code: MIT</span>
+    </div>
+  </aside>
+
+  <main id="lesson-content" class="lesson-page">
+    <nav class="breadcrumbs" aria-label="Lesson path">
+      <a routerLink="/">Course</a>
+      <span aria-hidden="true">/</span>
+      <span>{{ unit.title }}</span>
+      <span aria-hidden="true">/</span>
+      <strong>{{ lesson.title }}</strong>
+    </nav>
+
+    <header class="lesson-hero">
+      <p class="eyebrow">Unit {{ course.units.indexOf(unit) + 1 }} · Lesson {{ lesson.order }}</p>
+      <h1>{{ lesson.title }}</h1>
+      <p class="lesson-summary">{{ lesson.summary }}</p>
+      <div class="lesson-meta">
+        <span>{{ estimatedMinutes }} min</span>
+        <span>{{ lesson.type }}</span>
+        <span>Lesson {{ currentIndex + 1 }} of {{ flatLessons.length }}</span>
+      </div>
+      <div class="path-progress">
+        <span [style.width.%]="lessonPositionPercent"></span>
+      </div>
+    </header>
+
+    <article class="lesson-card">
+      <ng-container *ngFor="let block of lesson.richContent">
+        <ng-container [ngSwitch]="block.type">
+          <h2 *ngSwitchCase="'heading'" class="rich-heading" [class.rich-heading--small]="block.level === 3">
+            <app-math-text [text]="block.text"></app-math-text>
+          </h2>
+
+          <p *ngSwitchCase="'paragraph'" class="rich-paragraph">
+            <app-math-text [text]="block.text"></app-math-text>
+          </p>
+
+          <aside *ngSwitchCase="'callout'" class="rich-callout" [ngClass]="calloutClass(block.tone)">
+            <strong *ngIf="block.title"><app-math-text [text]="block.title"></app-math-text></strong>
+            <p><app-math-text [text]="block.text"></app-math-text></p>
+          </aside>
+
+          <figure *ngSwitchCase="'formula'" class="rich-formula">
+            <app-formula-renderer [latex]="block.latex || ''" [display]="block.display !== false"></app-formula-renderer>
+            <figcaption *ngIf="block.caption"><app-math-text [text]="block.caption"></app-math-text></figcaption>
+          </figure>
+
+          <figure *ngSwitchCase="'code'" class="rich-code">
+            <figcaption *ngIf="block.title">
+              <span>{{ block.title }}</span><small *ngIf="block.language">{{ block.language }}</small>
+            </figcaption>
+            <pre><code>{{ block.code }}</code></pre>
+          </figure>
+
+          <figure *ngSwitchCase="'diagram'" class="rich-diagram">
+            <figcaption *ngIf="block.title"><app-math-text [text]="block.title"></app-math-text></figcaption>
+            <div class="rich-diagram-canvas" [innerHTML]="trustedSvg(block.svg)"></div>
+            <small *ngIf="block.caption"><app-math-text [text]="block.caption"></app-math-text></small>
+          </figure>
+
+          <figure *ngSwitchCase="'table'" class="rich-table-wrap">
+            <figcaption *ngIf="block.caption"><app-math-text [text]="block.caption"></app-math-text></figcaption>
+            <div class="rich-table-scroll">
+              <table class="rich-table">
+                <thead><tr><th *ngFor="let column of block.columns || []"><app-math-text [text]="column"></app-math-text></th></tr></thead>
+                <tbody><tr *ngFor="let row of block.rows || []"><td *ngFor="let cell of row"><app-math-text [text]="cell"></app-math-text></td></tr></tbody>
+              </table>
+            </div>
+          </figure>
+
+          <ul *ngSwitchCase="'list'" class="rich-list">
+            <li *ngFor="let item of block.items || []"><app-math-text [text]="item"></app-math-text></li>
+          </ul>
+
+          <app-algo-ds-artifacts
+            *ngSwitchCase="'interactive'"
+            [artifact]="block.artifact || ''">
+          </app-algo-ds-artifacts>
+
+          <section *ngSwitchCase="'exercises'" class="rich-exercises" [attr.data-difficulty]="block.difficulty || 'easy'">
+            <article *ngFor="let item of block.exercises || []" class="exercise-card">
+              <header>
+                <span>{{ item.id }}</span>
+                <span *ngIf="item.source"><app-math-text [text]="item.source"></app-math-text></span>
+                <strong>{{ block.difficulty || 'easy' }}</strong>
+              </header>
+              <div class="exercise-question"><app-math-text [text]="item.question"></app-math-text></div>
+              <details *ngIf="item.solution">
+                <summary>Show solution</summary>
+                <div><app-math-text [text]="item.solution"></app-math-text></div>
+              </details>
+            </article>
+          </section>
+        </ng-container>
+      </ng-container>
+    </article>
+
+    <section *ngIf="lesson.practice?.length" class="knowledge-check">
+      <div class="section-heading">
+        <p class="eyebrow">Knowledge check</p>
+        <h2>Test your understanding</h2>
+        <p>Choose an answer, check it, and use the explanation to close any gaps.</p>
+      </div>
+
+      <article *ngFor="let question of lesson.practice; let questionIndex = index" class="question-card">
+        <ng-container *ngIf="questionState(question.id) as state">
+          <header><span>Question {{ questionIndex + 1 }}</span></header>
+          <p class="question-prompt"><app-math-text [text]="question.prompt"></app-math-text></p>
+          <div class="answer-grid">
+            <button
+              *ngFor="let option of question.options; let optionIndex = index"
+              type="button"
+              [class.is-selected]="state.selected === optionIndex"
+              [class.is-correct]="state.checked && question.answerIndex === optionIndex"
+              [class.is-wrong]="state.checked && state.selected === optionIndex && question.answerIndex !== optionIndex"
+              [disabled]="state.checked"
+              (click)="selectAnswer(question, optionIndex)">
+              <span>{{ optionIndex + 1 }}</span><app-math-text [text]="option"></app-math-text>
+            </button>
+          </div>
+          <div class="question-actions">
+            <button type="button" class="button button-primary" (click)="checkAnswer(question)" [disabled]="state.selected === null || state.checked">Check answer</button>
+            <button *ngIf="state.checked" type="button" class="button button-quiet" (click)="retryAnswer(question)">Try again</button>
+          </div>
+          <div *ngIf="state.checked" class="answer-feedback" [class.is-correct]="state.selected === question.answerIndex">
+            <strong>{{ state.selected === question.answerIndex ? 'Correct' : 'Review this idea' }}</strong>
+            <p><app-math-text [text]="question.explanation"></app-math-text></p>
+          </div>
+        </ng-container>
+      </article>
+    </section>
+
+    <section class="lesson-finish">
+      <div>
+        <p class="eyebrow">Save your progress</p>
+        <h2>{{ isCompleted() ? 'Lesson complete' : 'Finished this lesson?' }}</h2>
+        <p>Progress is stored only in this browser. No account or tracking is used.</p>
+      </div>
+      <button type="button" class="button button-primary" (click)="toggleComplete()">
+        {{ isCompleted() ? 'Mark incomplete' : 'Mark complete' }}
+      </button>
+    </section>
+
+    <nav class="lesson-navigation" aria-label="Previous and next lessons">
+      <a *ngIf="previousLesson as previous; else courseStart" [routerLink]="['/lesson', previous.id]">
+        <span>← Previous</span><strong>{{ previous.title }}</strong>
+      </a>
+      <ng-template #courseStart><span class="nav-placeholder">Start of course</span></ng-template>
+      <a *ngIf="nextLesson as next; else courseEnd" [routerLink]="['/lesson', next.id]" class="next-link">
+        <span>Next →</span><strong>{{ next.title }}</strong>
+      </a>
+      <ng-template #courseEnd><span class="nav-placeholder">End of course</span></ng-template>
+    </nav>
+
+    <footer class="course-footer">
+      <span>Educational content under CC BY 4.0 · Software and interactive artifacts under MIT.</span>
+      <a href="https://github.com/RyanBell-97/algorithms-course/blob/main/LICENSES.md" target="_blank" rel="noreferrer">License details</a>
+    </footer>
+  </main>
+
+  <button *ngIf="menuOpen" class="menu-backdrop" type="button" aria-label="Close course menu" (click)="menuOpen = false"></button>
+</div>
