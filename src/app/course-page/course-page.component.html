@@ -1,82 +1,139 @@
 <a class="skip-link" href="#lesson-content">Skip to lesson</a>
 
 <div class="course-shell">
-  <header class="topbar">
-    <a class="brand" routerLink="/" aria-label="Algorithms and Data Structures home">
-      <span class="brand-mark" aria-hidden="true">A<span>→</span>D</span>
-      <span>
-        <strong>Algorithms &amp; Data Structures</strong>
-        <small>Open course</small>
-      </span>
-    </a>
-
-    <div class="topbar-actions">
-      <span class="course-stat">11 units</span>
-      <span class="course-stat">69 lessons</span>
-      <a class="source-link" href="https://github.com/RyanBell-97/algorithms-course" target="_blank" rel="noreferrer">
-        Source code <span aria-hidden="true">↗</span>
-      </a>
-      <button class="menu-button" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen">
-        <span aria-hidden="true">☰</span> Course menu
-      </button>
-    </div>
-  </header>
-
   <aside class="course-sidebar" [class.is-open]="menuOpen" aria-label="Course navigation">
-    <div class="sidebar-intro">
-      <p class="eyebrow">Your progress</p>
-      <div class="progress-row">
-        <strong>{{ completionPercent }}%</strong>
-        <span>{{ completed.size }} / {{ flatLessons.length }} lessons</span>
-      </div>
-      <div class="progress-track" aria-hidden="true"><span [style.width.%]="completionPercent"></span></div>
+    <div class="sidebar-masthead">
+      <a class="brand" routerLink="/" aria-label="Proof and Process course home">
+        <img src="course-mark.png" alt="" width="54" height="54" />
+        <span>
+          <strong>Proof &amp;<br />Process</strong>
+          <small>Open course</small>
+        </span>
+      </a>
+      <button class="sidebar-close" type="button" aria-label="Close course menu" (click)="menuOpen = false">
+        <i class="ph ph-x" aria-hidden="true"></i>
+      </button>
     </div>
 
     <label class="course-search">
-      <span>Find a lesson</span>
-      <input type="search" [(ngModel)]="searchTerm" placeholder="Search topics…" />
+      <span class="sr-only">Find a lesson</span>
+      <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" [(ngModel)]="searchTerm" placeholder="Search lessons…" />
+      <kbd>Ctrl K</kbd>
     </label>
 
+    <div class="sidebar-intro">
+      <div class="progress-row">
+        <span>Your course progress</span>
+        <strong>{{ completionPercent }}%</strong>
+      </div>
+      <div class="progress-track" aria-hidden="true"><span [style.width.%]="completionPercent"></span></div>
+      <small>{{ completed.size }} of {{ flatLessons.length }} lessons complete</small>
+    </div>
+
     <nav class="unit-list">
-      <section *ngFor="let navUnit of course.units; let unitIndex = index" [hidden]="!hasVisibleLessons(navUnit)">
-        <h2><span>{{ unitIndex + 1 }}</span>{{ navUnit.title }}</h2>
-        <a
-          *ngFor="let navLesson of visibleLessons(navUnit)"
-          [routerLink]="['/lesson', navLesson.id]"
-          [class.is-active]="navLesson.id === lesson.id"
-          [class.is-complete]="isCompleted(navLesson.id)">
-          <span class="lesson-status" aria-hidden="true">{{ isCompleted(navLesson.id) ? '✓' : navLesson.order }}</span>
-          <span>{{ navLesson.title }}</span>
-        </a>
+      <section
+        *ngFor="let navUnit of course.units; let unitIndex = index"
+        [hidden]="!hasVisibleLessons(navUnit)"
+        [class.is-current-unit]="navUnit === unit">
+        <button
+          class="unit-toggle"
+          type="button"
+          (click)="toggleUnit(unitIndex)"
+          [attr.aria-expanded]="isUnitExpanded(unitIndex)">
+          <span class="unit-number">{{ twoDigit(unitIndex + 1) }}</span>
+          <span class="unit-title">
+            <strong>{{ navUnit.title }}</strong>
+            <small>{{ unitCompletedCount(navUnit) }}/{{ navUnit.lessons.length }} complete</small>
+          </span>
+          <i class="ph ph-caret-down" aria-hidden="true"></i>
+        </button>
+
+        <div class="unit-lessons" *ngIf="isUnitExpanded(unitIndex)">
+          <a
+            *ngFor="let navLesson of visibleLessons(navUnit)"
+            [routerLink]="['/lesson', navLesson.id]"
+            [class.is-active]="navLesson.id === lesson.id"
+            [class.is-complete]="isCompleted(navLesson.id)">
+            <span class="lesson-status" aria-hidden="true">
+              <i *ngIf="isCompleted(navLesson.id); else lessonOrder" class="ph ph-check"></i>
+              <ng-template #lessonOrder>{{ twoDigit(navLesson.order) }}</ng-template>
+            </span>
+            <span>{{ navLesson.title }}</span>
+          </a>
+          <div class="unit-progress" aria-hidden="true"><span [style.width.%]="unitCompletionPercent(navUnit)"></span></div>
+        </div>
       </section>
     </nav>
 
     <div class="sidebar-license">
-      <strong>Free to learn from and reuse</strong>
-      <span>Content: CC BY 4.0 · Code: MIT</span>
+      <i class="ph ph-copyright" aria-hidden="true"></i>
+      <span><strong>Free to learn from and reuse</strong>Content: CC BY 4.0 · Code: MIT</span>
     </div>
   </aside>
 
-  <main id="lesson-content" class="lesson-page">
+  <header class="topbar">
+    <a class="mobile-brand" routerLink="/" aria-label="Proof and Process home">
+      <img src="course-mark.png" alt="" width="36" height="36" />
+      <span>Proof &amp; Process</span>
+    </a>
+
     <nav class="breadcrumbs" aria-label="Lesson path">
       <a routerLink="/">Course</a>
-      <span aria-hidden="true">/</span>
+      <i class="ph ph-slash" aria-hidden="true"></i>
       <span>{{ unit.title }}</span>
-      <span aria-hidden="true">/</span>
+      <i class="ph ph-slash" aria-hidden="true"></i>
       <strong>{{ lesson.title }}</strong>
     </nav>
 
+    <div class="topbar-actions">
+      <span class="course-stat"><i class="ph ph-books" aria-hidden="true"></i>11 units</span>
+      <span class="course-stat"><i class="ph ph-book-open-text" aria-hidden="true"></i>69 lessons</span>
+      <a class="source-link" href="https://github.com/RyanBell-97/algorithms-course" target="_blank" rel="noreferrer">
+        <i class="ph ph-code" aria-hidden="true"></i>Source code<i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+      </a>
+      <button class="menu-button" type="button" aria-label="Course menu" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen">
+        <i class="ph ph-list" aria-hidden="true"></i><span>Course menu</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="lesson-content" class="lesson-page">
     <header class="lesson-hero">
-      <p class="eyebrow">Unit {{ course.units.indexOf(unit) + 1 }} · Lesson {{ lesson.order }}</p>
-      <h1>{{ lesson.title }}</h1>
-      <p class="lesson-summary">{{ lesson.summary }}</p>
-      <div class="lesson-meta">
-        <span>{{ estimatedMinutes }} min</span>
-        <span>{{ lesson.type }}</span>
-        <span>Lesson {{ currentIndex + 1 }} of {{ flatLessons.length }}</span>
+      <div class="hero-index" aria-hidden="true">
+        <span>Unit</span>
+        <strong class="unit-index">{{ twoDigit(currentUnitIndex + 1) }}</strong>
+        <span>Lesson</span>
+        <strong>{{ twoDigit(lesson.order) }}</strong>
       </div>
-      <div class="path-progress">
-        <span [style.width.%]="lessonPositionPercent"></span>
+
+      <div class="hero-copy">
+        <p class="eyebrow">{{ unit.title }}</p>
+        <h1>{{ lesson.title }}</h1>
+        <p class="lesson-summary">{{ lesson.summary }}</p>
+        <div class="path-progress" aria-label="Course position">
+          <span [style.width.%]="lessonPositionPercent"></span>
+        </div>
+        <small class="position-label">Lesson {{ currentIndex + 1 }} of {{ flatLessons.length }}</small>
+      </div>
+
+      <div class="lesson-meta">
+        <div><i class="ph ph-clock" aria-hidden="true"></i><span><strong>{{ estimatedMinutes }} min</strong><small>Estimated time</small></span></div>
+        <div><i class="ph ph-play" aria-hidden="true"></i><span><strong>{{ lesson.type }}</strong><small>Learning format</small></span></div>
+        <div><i class="ph ph-list-numbers" aria-hidden="true"></i><span><strong>{{ currentIndex + 1 }} of {{ flatLessons.length }}</strong><small>In this course</small></span></div>
+        <button type="button" class="hero-complete" (click)="toggleComplete()">
+          <i class="ph" [ngClass]="isCompleted() ? 'ph-check-circle' : 'ph-bookmark-simple'" aria-hidden="true"></i>
+          <span><strong>{{ isCompleted() ? 'Completed' : 'Save progress' }}</strong><small>{{ isCompleted() ? 'Marked as learned' : 'Mark lesson complete' }}</small></span>
+        </button>
+      </div>
+
+      <div class="hero-flow" aria-label="Learning flow">
+        <p class="eyebrow">Learning flow</p>
+        <ol>
+          <li><i class="ph ph-lightbulb" aria-hidden="true"></i><span>Concept</span></li>
+          <li><i class="ph ph-function" aria-hidden="true"></i><span>{{ lesson.type }}</span></li>
+          <li><i class="ph ph-check-circle" aria-hidden="true"></i><span>Apply</span></li>
+        </ol>
       </div>
     </header>
 

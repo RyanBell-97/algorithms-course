@@ -43,6 +43,7 @@ export class CoursePageComponent implements OnInit, OnDestroy {
   searchTerm = '';
   menuOpen = false;
   completed = new Set<string>();
+  expandedUnits = new Set<number>([0]);
   questionStates: Record<string, QuestionState> = {};
 
   private routeSubscription?: Subscription;
@@ -67,9 +68,10 @@ export class CoursePageComponent implements OnInit, OnDestroy {
       this.currentIndex = index;
       this.lesson = this.flatLessons[index].lesson;
       this.unit = this.flatLessons[index].unit;
+      this.expandedUnits = new Set([this.course.units.indexOf(this.unit)]);
       this.questionStates = {};
       this.menuOpen = false;
-      document.title = `${this.lesson.title} · ${this.course.title}`;
+      document.title = `${this.lesson.title} · Proof & Process`;
       requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'instant' }));
     });
   }
@@ -96,6 +98,53 @@ export class CoursePageComponent implements OnInit, OnDestroy {
 
   get estimatedMinutes(): number {
     return this.lesson.estimatedMinutes || this.lesson.durationMinutes || 0;
+  }
+
+  get currentUnitIndex(): number {
+    return this.course.units.indexOf(this.unit);
+  }
+
+  toggleUnit(unitIndex: number): void {
+    const next = new Set(this.expandedUnits);
+    if (next.has(unitIndex)) {
+      next.delete(unitIndex);
+    } else {
+      next.add(unitIndex);
+    }
+    this.expandedUnits = next;
+  }
+
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
+    if (this.menuOpen) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const navigation = document.querySelector<HTMLElement>('.unit-list');
+          const activeLesson = document.querySelector<HTMLElement>('.unit-list a.is-active');
+          if (!navigation || !activeLesson) return;
+          const navigationBox = navigation.getBoundingClientRect();
+          const lessonBox = activeLesson.getBoundingClientRect();
+          navigation.scrollTop += lessonBox.top - navigationBox.top
+            - (navigation.clientHeight - lessonBox.height) / 2;
+        });
+      });
+    }
+  }
+
+  isUnitExpanded(unitIndex: number): boolean {
+    return !!this.searchTerm.trim() || this.expandedUnits.has(unitIndex);
+  }
+
+  unitCompletedCount(unit: Unit): number {
+    return unit.lessons.filter((lesson) => this.completed.has(lesson.id)).length;
+  }
+
+  unitCompletionPercent(unit: Unit): number {
+    return Math.round((this.unitCompletedCount(unit) / unit.lessons.length) * 100);
+  }
+
+  twoDigit(value: number): string {
+    return value.toString().padStart(2, '0');
   }
 
   visibleLessons(unit: Unit): Lesson[] {
